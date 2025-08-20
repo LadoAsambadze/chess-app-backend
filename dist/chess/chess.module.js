@@ -10,13 +10,16 @@ exports.ChessModule = void 0;
 const common_1 = require("@nestjs/common");
 const chess_service_1 = require("./chess.service");
 const chess_controller_1 = require("./chess.controller");
+const prisma_module_1 = require("../prisma/prisma.module");
 let ChessModule = class ChessModule {
 };
 exports.ChessModule = ChessModule;
 exports.ChessModule = ChessModule = __decorate([
     (0, common_1.Module)({
+        imports: [prisma_module_1.PrismaModule],
         controllers: [chess_controller_1.ChessController],
         providers: [chess_service_1.ChessService],
+        exports: [chess_service_1.ChessService],
     })
 ], ChessModule);
 //# sourceMappingURL=chess.module.js.map

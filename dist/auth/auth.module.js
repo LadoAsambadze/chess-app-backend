@@ -20,6 +20,7 @@ const schedule_1 = require("@nestjs/schedule");
 const sheduled_tasks_service_1 = require("./services/sheduled-tasks.service");
 const email_service_1 = require("./services/email.service");
 const auth_controller_1 = require("./auth.controller");
+const jwt_strategy_1 = require("./strategies/jwt.strategy");
 let AuthModule = class AuthModule {
 };
 exports.AuthModule = AuthModule;
@@ -45,6 +46,7 @@ exports.AuthModule = AuthModule = __decorate([
         controllers: [auth_controller_1.AuthController],
         providers: [
             google_strategy_1.GoogleStrategy,
+            jwt_strategy_1.JwtStrategy,
             auth_service_1.AuthService,
             user_account_service_1.UserAccountService,
             token_service_1.TokenService,
@@ -52,7 +54,7 @@ exports.AuthModule = AuthModule = __decorate([
             sheduled_tasks_service_1.ScheduledTasksService,
             email_service_1.EmailService,
         ],
-        exports: [auth_service_1.AuthService],
+        exports: [auth_service_1.AuthService, jwt_strategy_1.JwtStrategy, passport_1.PassportModule],
     })
 ], AuthModule);
 //# sourceMappingURL=auth.module.js.map

@@ -32,8 +32,13 @@ async function bootstrap() {
         optionsSuccessStatus: 200,
     });
     const config = new swagger_1.DocumentBuilder()
-        .setTitle("Your API")
+        .setTitle("Chess API")
         .setVersion("1.0")
+        .addBearerAuth({
+        type: "http",
+        scheme: "bearer",
+        bearerFormat: "JWT",
+    }, "access_token")
         .build();
     const document = swagger_1.SwaggerModule.createDocument(app, config);
     swagger_1.SwaggerModule.setup("api", app, document);

@@ -9,32 +9,33 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SigninDto = void 0;
+exports.MakeMoveDto = void 0;
 const class_validator_1 = require("class-validator");
-const swagger_1 = require("@nestjs/swagger");
-class SigninDto {
-    email;
-    password;
+class MakeMoveDto {
+    gameId;
+    from;
+    to;
+    promotion;
 }
-exports.SigninDto = SigninDto;
+exports.MakeMoveDto = MakeMoveDto;
 __decorate([
-    (0, swagger_1.ApiProperty)({
-        example: "lado1@gmail.com",
-        description: "User email address",
-        type: String,
-    }),
-    (0, class_validator_1.IsEmail)(),
-    (0, class_validator_1.IsNotEmpty)(),
-    __metadata("design:type", String)
-], SigninDto.prototype, "email", void 0);
-__decorate([
-    (0, swagger_1.ApiProperty)({
-        example: "Lado12345!",
-        description: "User password",
-        type: String,
-    }),
     (0, class_validator_1.IsString)(),
     (0, class_validator_1.IsNotEmpty)(),
     __metadata("design:type", String)
-], SigninDto.prototype, "password", void 0);
-//# sourceMappingURL=signin.dto.js.map
+], MakeMoveDto.prototype, "gameId", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], MakeMoveDto.prototype, "from", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], MakeMoveDto.prototype, "to", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], MakeMoveDto.prototype, "promotion", void 0);
+//# sourceMappingURL=make-move.dto.js.map

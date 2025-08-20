@@ -27,7 +27,12 @@ model User {
   updatedAt  DateTime  @updatedAt @map("updated_at")
   lastLogin  DateTime? @map("last_login")
   accounts   Account[]
-  sessions   Session[]   
+  sessions   Session[]
+  
+  // Relations to games
+  createdGames Game[] @relation("CreatedGames")
+  joinedGames  Game[] @relation("JoinedGames")
+  wonGames     Game[] @relation("WonGames")
 
   @@map("users")
 }
@@ -68,7 +73,6 @@ model Session {
   @@index([userId])
 }
 
-
 model LoginAttempt {
   id        String   @id @default(uuid())
   email     String
@@ -78,6 +82,25 @@ model LoginAttempt {
   createdAt DateTime @default(now()) @map("created_at")
 
   @@map("login_attempts")
+}
+
+model Game {
+  id               String      @id @default(cuid())
+  creatorId        String
+  creator          User        @relation("CreatedGames", fields: [creatorId], references: [id])
+  opponentId       String?     
+  opponent         User?       @relation("JoinedGames", fields: [opponentId], references: [id])
+  pendingOpponentId String?    // NEW: user requesting to join, waiting approval
+  winnerId         String?
+  winner           User?       @relation("WonGames", fields: [winnerId], references: [id])
+  status           GameStatus
+  timeControl      Int
+  fen              String      @default("start")
+  moveHistory      Json        @default("[]")
+  isPrivate        Boolean     @default(false)
+  password         String?
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
 }
 
 enum UserRole {
@@ -96,3 +119,12 @@ enum TokenType {
   RESET_PASSWORD
   CHANGE_EMAIL
 }
+
+enum GameStatus {
+  WAITING
+  ONGOING
+  FINISHED
+  DRAW  
+}
+
+

@@ -1,4 +1,5 @@
 export declare class CreateGameDto {
-    opponentId: string;
-    timeControl?: number;
+    timeControl: number;
+    isPrivate?: boolean;
+    password?: string;
 }

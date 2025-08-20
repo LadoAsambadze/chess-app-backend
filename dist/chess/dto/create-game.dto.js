@@ -10,21 +10,34 @@ var __metadata = (this && this.__metadata) || function (k, v) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreateGameDto = void 0;
+const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 class CreateGameDto {
-    opponentId;
     timeControl;
+    isPrivate;
+    password;
 }
 exports.CreateGameDto = CreateGameDto;
 __decorate([
-    (0, class_validator_1.IsString)(),
-    __metadata("design:type", String)
-], CreateGameDto.prototype, "opponentId", void 0);
-__decorate([
-    (0, class_validator_1.IsOptional)(),
+    (0, swagger_1.ApiProperty)({ example: 5, description: "Time control in minutes" }),
     (0, class_validator_1.IsInt)(),
-    (0, class_validator_1.Min)(60),
-    (0, class_validator_1.Max)(3600),
+    (0, class_validator_1.Min)(1),
+    (0, class_validator_1.Max)(60),
     __metadata("design:type", Number)
 ], CreateGameDto.prototype, "timeControl", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: false, description: "Is the game private?" }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateGameDto.prototype, "isPrivate", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        example: "secret123",
+        description: "Password for private game",
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateGameDto.prototype, "password", void 0);
 //# sourceMappingURL=create-game.dto.js.map

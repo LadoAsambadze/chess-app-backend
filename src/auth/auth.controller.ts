@@ -28,6 +28,7 @@ import type { UpdatePasswordInput } from "./dto/update-password.dto";
 import { CurrentUser } from "./decorators/current-user.decorator";
 import { GoogleRequest } from "./types/google-request.type";
 import { MessageOutputDto } from "./dto/message-output.dto";
+import { ApiBearerAuth } from "@nestjs/swagger";
 
 @Controller("auth")
 export class AuthController {
@@ -132,6 +133,7 @@ export class AuthController {
 
   @Get("me")
   @UseGuards(AuthGuard("jwt"))
+  @ApiBearerAuth("access_token")
   async me(@CurrentUser() user: User): Promise<User> {
     return user;
   }

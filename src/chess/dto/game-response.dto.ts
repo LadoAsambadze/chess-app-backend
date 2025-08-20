@@ -1,33 +1,33 @@
-import type { GameStatus, GameResult, PlayerColor } from "@prisma/client";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class GameResponseDto {
+  @ApiProperty()
   id: string;
-  whitePlayerId: string;
-  blackPlayerId: string;
-  status: GameStatus;
-  result?: GameResult;
-  winnerId?: string;
-  currentTurn: PlayerColor;
-  boardState: string;
-  timeControl?: number;
-  whiteTimeLeft?: number;
-  blackTimeLeft?: number;
-  createdAt: Date;
-  updatedAt: Date;
-  startedAt?: Date;
-  endedAt?: Date;
-  moves?: MoveResponseDto[];
-}
 
-export class MoveResponseDto {
-  id: string;
-  moveNumber: number;
-  from: string;
-  to: string;
-  piece: string;
-  notation: string;
+  @ApiProperty()
+  status: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  winnerId: string | null;
+
+  @ApiProperty()
+  creatorId: string;
+
+  @ApiProperty({ required: false, nullable: true })
+  opponentId: string | null;
+
+  @ApiProperty({ required: false, nullable: true })
+  pendingOpponentId: string | null;
+
+  @ApiProperty()
+  timeControl: number;
+
+  @ApiProperty()
   fen: string;
-  timeSpent?: number;
-  createdAt: Date;
-  playerId: string;
+
+  @ApiProperty({ type: [String] })
+  moveHistory: any;
+
+  @ApiProperty()
+  isPrivate: boolean;
 }

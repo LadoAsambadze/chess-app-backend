@@ -1,31 +1,12 @@
-import type { GameStatus, GameResult, PlayerColor } from "@prisma/client";
 export declare class GameResponseDto {
     id: string;
-    whitePlayerId: string;
-    blackPlayerId: string;
-    status: GameStatus;
-    result?: GameResult;
-    winnerId?: string;
-    currentTurn: PlayerColor;
-    boardState: string;
-    timeControl?: number;
-    whiteTimeLeft?: number;
-    blackTimeLeft?: number;
-    createdAt: Date;
-    updatedAt: Date;
-    startedAt?: Date;
-    endedAt?: Date;
-    moves?: MoveResponseDto[];
-}
-export declare class MoveResponseDto {
-    id: string;
-    moveNumber: number;
-    from: string;
-    to: string;
-    piece: string;
-    notation: string;
+    status: string;
+    winnerId: string | null;
+    creatorId: string;
+    opponentId: string | null;
+    pendingOpponentId: string | null;
+    timeControl: number;
     fen: string;
-    timeSpent?: number;
-    createdAt: Date;
-    playerId: string;
+    moveHistory: any;
+    isPrivate: boolean;
 }

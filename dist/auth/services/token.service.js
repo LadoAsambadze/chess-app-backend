@@ -37,12 +37,12 @@ let TokenService = TokenService_1 = class TokenService {
         };
         const [accessToken, refreshToken] = await Promise.all([
             this.jwt.signAsync(payload, {
-                secret: this.config.get('JWT_SECRET'),
-                expiresIn: this.config.get('JWT_ACCESS_TOKEN_EXPIRATION') || '15m',
+                secret: this.config.get("JWT_SECRET"),
+                expiresIn: this.config.get("JWT_ACCESS_TOKEN_EXPIRATION") || "15m",
             }),
             this.jwt.signAsync(payload, {
-                secret: this.config.get('JWT_REFRESH_SECRET'),
-                expiresIn: this.config.get('JWT_REFRESH_TOKEN_EXPIRATION') || '7d',
+                secret: this.config.get("JWT_REFRESH_SECRET"),
+                expiresIn: this.config.get("JWT_REFRESH_TOKEN_EXPIRATION") || "7d",
             }),
         ]);
         return { accessToken, refreshToken };
@@ -57,14 +57,14 @@ let TokenService = TokenService_1 = class TokenService {
             avatar,
         };
         return this.jwt.signAsync(payload, {
-            secret: this.config.get('JWT_SECRET'),
-            expiresIn: this.config.get('JWT_ACCESS_TOKEN_EXPIRATION') || '15m',
+            secret: this.config.get("JWT_SECRET"),
+            expiresIn: this.config.get("JWT_ACCESS_TOKEN_EXPIRATION") || "15m",
         });
     }
     async verifyRefreshToken(token) {
         try {
             const payload = await this.jwt.verifyAsync(token, {
-                secret: this.config.get('JWT_REFRESH_SECRET'),
+                secret: this.config.get("JWT_REFRESH_SECRET"),
             });
             const storedToken = await this.prisma.session.findFirst({
                 where: {
@@ -75,12 +75,12 @@ let TokenService = TokenService_1 = class TokenService {
                 },
             });
             if (!storedToken) {
-                throw new common_1.UnauthorizedException('Invalid refresh token');
+                throw new common_1.UnauthorizedException("Invalid refresh token");
             }
             return { payload, storedToken };
         }
         catch {
-            throw new common_1.UnauthorizedException('Invalid refresh token');
+            throw new common_1.UnauthorizedException("Invalid refresh token");
         }
     }
     async saveRefreshToken(userId, refreshToken) {
@@ -88,13 +88,13 @@ let TokenService = TokenService_1 = class TokenService {
             where: { token: refreshToken },
             update: {
                 userId,
-                expiresAt: (0, expiry_date_util_1.calculateExpiryDate)(this.config.get('JWT_REFRESH_TOKEN_EXPIRATION') || '7d'),
+                expiresAt: (0, expiry_date_util_1.calculateExpiryDate)(this.config.get("JWT_REFRESH_TOKEN_EXPIRATION") || "7d"),
                 isRevoked: false,
             },
             create: {
                 token: refreshToken,
                 userId,
-                expiresAt: (0, expiry_date_util_1.calculateExpiryDate)(this.config.get('JWT_REFRESH_TOKEN_EXPIRATION') || '7d'),
+                expiresAt: (0, expiry_date_util_1.calculateExpiryDate)(this.config.get("JWT_REFRESH_TOKEN_EXPIRATION") || "7d"),
                 isRevoked: false,
             },
         });
@@ -149,18 +149,18 @@ let TokenService = TokenService_1 = class TokenService {
             return { deletedCount: result.count };
         }
         catch (error) {
-            this.logger.error('Failed to cleanup expired tokens', error);
+            this.logger.error("Failed to cleanup expired tokens", error);
             throw error;
         }
     }
     async verifyAccessToken(token) {
         try {
             return await this.jwt.verifyAsync(token, {
-                secret: this.config.get('JWT_SECRET'),
+                secret: this.config.get("JWT_SECRET"),
             });
         }
         catch (error) {
-            throw new common_1.UnauthorizedException('Invalid access token');
+            throw new common_1.UnauthorizedException("Invalid access token");
         }
     }
     async getTokenStats() {

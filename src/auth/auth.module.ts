@@ -11,6 +11,7 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { ScheduledTasksService } from "./services/sheduled-tasks.service";
 import { EmailService } from "./services/email.service";
 import { AuthController } from "./auth.controller";
+import { JwtStrategy } from "./strategies/jwt.strategy";
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AuthController } from "./auth.controller";
   controllers: [AuthController],
   providers: [
     GoogleStrategy,
+    JwtStrategy,
     AuthService,
     UserAccountService,
     TokenService,
@@ -41,6 +43,6 @@ import { AuthController } from "./auth.controller";
     ScheduledTasksService,
     EmailService,
   ],
-  exports: [AuthService],
+  exports: [AuthService, JwtStrategy, PassportModule],
 })
 export class AuthModule {}

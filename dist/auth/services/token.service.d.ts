@@ -1,7 +1,7 @@
-import { JwtService } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '../../prisma/prisma.service';
-import { AuthTokens } from '../types/auth-tokens.type';
+import { JwtService } from "@nestjs/jwt";
+import { ConfigService } from "@nestjs/config";
+import { PrismaService } from "../../prisma/prisma.service";
+import { AuthTokens } from "../types/auth-tokens.type";
 export declare class TokenService {
     private jwt;
     private config;

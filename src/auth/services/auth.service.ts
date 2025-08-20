@@ -46,10 +46,6 @@ export class AuthService {
     };
   }
 
-
-
-  
-
   async signupOrLoginWithGoogle(
     googleUser: GoogleRequest,
     response: Response

@@ -21,6 +21,7 @@ const sheduled_tasks_service_1 = require("./services/sheduled-tasks.service");
 const user_account_service_1 = require("./services/user-account.service");
 const passport_1 = require("@nestjs/passport");
 const current_user_decorator_1 = require("./decorators/current-user.decorator");
+const swagger_1 = require("@nestjs/swagger");
 let AuthController = class AuthController {
     authService;
     scheduledTasksService;
@@ -174,6 +175,7 @@ __decorate([
 __decorate([
     (0, common_1.Get)("me"),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)("jwt")),
+    (0, swagger_1.ApiBearerAuth)("access_token"),
     __param(0, (0, current_user_decorator_1.CurrentUser)()),
     __metadata("design:type", Function),
     __metadata("design:paramtypes", [Object]),
