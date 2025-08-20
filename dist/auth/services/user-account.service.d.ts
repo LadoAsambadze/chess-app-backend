@@ -1,0 +1,111 @@
+import { PrismaService } from "../../prisma/prisma.service";
+import { User } from "../types/user.type";
+import { EmailService } from "./email.service";
+import { UpdatePasswordInput } from "../dto/update-password.dto";
+import { GoogleRequest } from "../types/google-request.type";
+import { SignupDto } from "../dto/signup.dto";
+export declare class UserAccountService {
+    private prisma;
+    private emailService;
+    constructor(prisma: PrismaService, emailService: EmailService);
+    createUserWithCredentials(dto: SignupDto): Promise<{
+        email: string;
+        firstname: string;
+        lastname: string;
+        avatar: string | null;
+        phone: string | null;
+        id: string;
+        role: import(".prisma/client").$Enums.UserRole;
+        method: import(".prisma/client").$Enums.AuthMethod;
+        isVerified: boolean;
+        emailVerificationExpires: Date | null;
+        resetPasswordToken: string | null;
+        resetPasswordTokenExpires: Date | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        lastLogin: Date | null;
+    }>;
+    verifyEmail(token: string): Promise<{
+        message: string;
+        user: {
+            id: string;
+            email: string;
+            isVerified: boolean;
+        };
+    }>;
+    resendVerificationEmail(email: string): Promise<{
+        message: string;
+    }>;
+    signupOrLoginWithGoogle(req: GoogleRequest): Promise<{
+        email: string;
+        password: string | null;
+        firstname: string;
+        lastname: string;
+        avatar: string | null;
+        phone: string | null;
+        id: string;
+        role: import(".prisma/client").$Enums.UserRole;
+        method: import(".prisma/client").$Enums.AuthMethod;
+        isVerified: boolean;
+        emailVerificationToken: string | null;
+        emailVerificationExpires: Date | null;
+        resetPasswordToken: string | null;
+        resetPasswordTokenExpires: Date | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        lastLogin: Date | null;
+    }>;
+    validateCredentials(email: string, password: string): Promise<{
+        email: string;
+        password: string | null;
+        firstname: string;
+        lastname: string;
+        avatar: string | null;
+        phone: string | null;
+        id: string;
+        role: import(".prisma/client").$Enums.UserRole;
+        method: import(".prisma/client").$Enums.AuthMethod;
+        isVerified: boolean;
+        emailVerificationToken: string | null;
+        emailVerificationExpires: Date | null;
+        resetPasswordToken: string | null;
+        resetPasswordTokenExpires: Date | null;
+        isActive: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        lastLogin: Date | null;
+    }>;
+    findById(userId: string): Promise<User>;
+    findByEmail(email: string): Promise<{
+        email: string;
+        firstname: string;
+        lastname: string;
+        avatar: string | null;
+        phone: string | null;
+        id: string;
+        role: import(".prisma/client").$Enums.UserRole;
+        method: import(".prisma/client").$Enums.AuthMethod;
+        isVerified: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        lastLogin: Date | null;
+    } | null>;
+    updateLastLogin(userId: string): Promise<{
+        email: string;
+        firstname: string;
+        lastname: string;
+        avatar: string | null;
+        phone: string | null;
+        id: string;
+        role: import(".prisma/client").$Enums.UserRole;
+        method: import(".prisma/client").$Enums.AuthMethod;
+        isVerified: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        lastLogin: Date | null;
+    }>;
+    sendUpdatePasswordEmail(email: string): Promise<string>;
+    updatePassword(dto: UpdatePasswordInput): Promise<string>;
+}

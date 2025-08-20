@@ -1,0 +1,85 @@
+# ------------------------------------------------------
+# THIS FILE WAS AUTOMATICALLY GENERATED (DO NOT MODIFY)
+# ------------------------------------------------------
+
+type AuthResponse {
+  accessToken: String!
+  user: User!
+}
+
+"""
+A date-time string at UTC, such as 2019-12-03T09:54:33Z, compliant with the date-time format.
+"""
+scalar DateTime
+
+type MessageOutput {
+  message: String!
+}
+
+type Mutation {
+  cleanupTokens: MessageOutput!
+  logout: MessageOutput!
+  refreshToken: RefreshTokenResponse!
+  resendVerificationEmail(email: String!): String!
+  sendUpdatePasswordEmail(email: String!): String!
+  signin(signinInput: SigninRequest!): AuthResponse!
+  signup(signupInput: SignupRequest!): SignupResponse!
+  updatePassword(data: UpdatePasswordInput!): UpdatePasswordResponse!
+}
+
+type Query {
+  hello: String!
+  me: User!
+  verifyEmail(token: String!): String!
+}
+
+type RefreshTokenResponse {
+  accessToken: String!
+  user: User!
+}
+
+input SigninRequest {
+  email: String!
+  password: String!
+}
+
+input SignupRequest {
+  avatar: String
+  email: String!
+  firstname: String!
+  lastname: String!
+  password: String!
+  phone: String
+}
+
+type SignupResponse {
+  email: String
+  message: String!
+  success: Boolean!
+  userId: String
+}
+
+input UpdatePasswordInput {
+  password: String!
+  token: String!
+}
+
+type UpdatePasswordResponse {
+  message: String!
+}
+
+type User {
+  avatar: String
+  createdAt: DateTime!
+  email: String!
+  firstname: String!
+  id: ID!
+  isActive: Boolean!
+  isVerified: Boolean!
+  lastLogin: DateTime
+  lastname: String!
+  method: String!
+  phone: String
+  role: String!
+  updatedAt: DateTime!
+}
