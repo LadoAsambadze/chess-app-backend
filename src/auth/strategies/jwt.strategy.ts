@@ -34,16 +34,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
         throw new UnauthorizedException("User account is not verified");
       }
 
-      return {
-        id: user.id,
-        email: user.email,
-        firstname: user.firstname,
-        lastname: user.lastname,
-        role: user.role,
-        isActive: user.isActive,
-        isVerified: user.isVerified,
-        avatar: user.avatar,
-      };
+      return user;
     } catch (error) {
       throw new UnauthorizedException("Invalid token");
     }

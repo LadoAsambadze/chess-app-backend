@@ -27,14 +27,11 @@ let ChessController = class ChessController {
     async createGame(user, createGameDto) {
         return this.chessService.createGame(user.id, createGameDto);
     }
+    async getAvailableGames(user) {
+        return this.chessService.getAvailableGames();
+    }
     async joinGame(user, gameId) {
         return this.chessService.joinGame(user.id, gameId);
-    }
-    async acceptOpponent(user, gameId) {
-        return this.chessService.acceptOpponent(user.id, gameId);
-    }
-    async rejectOpponent(user, gameId) {
-        return this.chessService.rejectOpponent(user.id, gameId);
     }
 };
 exports.ChessController = ChessController;
@@ -50,6 +47,15 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], ChessController.prototype, "createGame", null);
 __decorate([
+    (0, common_1.Get)(),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)("jwt")),
+    (0, swagger_1.ApiBearerAuth)("access_token"),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], ChessController.prototype, "getAvailableGames", null);
+__decorate([
     (0, common_1.Post)("join/:gameId"),
     (0, common_1.UseGuards)((0, passport_1.AuthGuard)("jwt")),
     (0, swagger_1.ApiBearerAuth)("access_token"),
@@ -59,26 +65,6 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], ChessController.prototype, "joinGame", null);
-__decorate([
-    (0, common_1.Post)("accept/:gameId"),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)("jwt")),
-    (0, swagger_1.ApiBearerAuth)("access_token"),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, common_1.Param)("gameId")),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
-    __metadata("design:returntype", Promise)
-], ChessController.prototype, "acceptOpponent", null);
-__decorate([
-    (0, common_1.Post)("reject/:gameId"),
-    (0, common_1.UseGuards)((0, passport_1.AuthGuard)("jwt")),
-    (0, swagger_1.ApiBearerAuth)("access_token"),
-    __param(0, (0, current_user_decorator_1.CurrentUser)()),
-    __param(1, (0, common_1.Param)("gameId")),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
-    __metadata("design:returntype", Promise)
-], ChessController.prototype, "rejectOpponent", null);
 exports.ChessController = ChessController = __decorate([
     (0, common_1.Controller)("games"),
     __metadata("design:paramtypes", [chess_service_1.ChessService])

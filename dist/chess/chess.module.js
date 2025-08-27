@@ -11,14 +11,22 @@ const common_1 = require("@nestjs/common");
 const chess_service_1 = require("./chess.service");
 const chess_controller_1 = require("./chess.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
+const chess_gateway_1 = require("./chess.gateway");
+const jwt_1 = require("@nestjs/jwt");
 let ChessModule = class ChessModule {
 };
 exports.ChessModule = ChessModule;
 exports.ChessModule = ChessModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule],
+        imports: [
+            prisma_module_1.PrismaModule,
+            jwt_1.JwtModule.register({
+                secret: process.env.JWT_SECRET,
+                signOptions: { expiresIn: "24h" },
+            }),
+        ],
         controllers: [chess_controller_1.ChessController],
-        providers: [chess_service_1.ChessService],
+        providers: [chess_service_1.ChessService, chess_gateway_1.GamesGateway],
         exports: [chess_service_1.ChessService],
     })
 ], ChessModule);

@@ -39,16 +39,7 @@ let JwtStrategy = class JwtStrategy extends (0, passport_1.PassportStrategy)(pas
             if (!user.isVerified) {
                 throw new common_1.UnauthorizedException("User account is not verified");
             }
-            return {
-                id: user.id,
-                email: user.email,
-                firstname: user.firstname,
-                lastname: user.lastname,
-                role: user.role,
-                isActive: user.isActive,
-                isVerified: user.isVerified,
-                avatar: user.avatar,
-            };
+            return user;
         }
         catch (error) {
             throw new common_1.UnauthorizedException("Invalid token");

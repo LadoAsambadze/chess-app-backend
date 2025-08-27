@@ -13,12 +13,18 @@ exports.ChessService = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../prisma/prisma.service");
+const chess_gateway_1 = require("./chess.gateway");
 let ChessService = class ChessService {
     prisma;
-    constructor(prisma) {
+    gateway;
+    constructor(prisma, gateway) {
         this.prisma = prisma;
+        this.gateway = gateway;
     }
     async createGame(userId, dto) {
+        if (!userId) {
+            throw new common_1.BadRequestException("User ID is required.");
+        }
         if (dto.isPrivate && !dto.password) {
             throw new common_1.BadRequestException("Private games must have a password.");
         }
@@ -33,7 +39,7 @@ let ChessService = class ChessService {
                 password: dto.password ?? null,
             },
         });
-        return {
+        const payload = {
             id: newGame.id,
             creatorId: newGame.creatorId,
             opponentId: null,
@@ -45,6 +51,31 @@ let ChessService = class ChessService {
             isPrivate: newGame.isPrivate,
             winnerId: null,
         };
+        if (!payload.isPrivate && payload.status === client_1.GameStatus.WAITING) {
+            this.gateway.emitGameCreated(payload);
+        }
+        return payload;
+    }
+    async getAvailableGames() {
+        const games = await this.prisma.game.findMany({
+            where: {
+                status: client_1.GameStatus.WAITING,
+                isPrivate: false,
+            },
+            orderBy: { createdAt: "desc" },
+        });
+        return games.map((game) => ({
+            id: game.id,
+            creatorId: game.creatorId,
+            opponentId: game.opponentId ?? null,
+            pendingOpponentId: game.pendingOpponentId ?? null,
+            status: game.status,
+            timeControl: game.timeControl,
+            fen: game.fen,
+            moveHistory: game.moveHistory,
+            isPrivate: game.isPrivate,
+            winnerId: game.winnerId ?? null,
+        }));
     }
     async joinGame(userId, gameId) {
         const game = await this.prisma.game.findUnique({ where: { id: gameId } });
@@ -60,34 +91,9 @@ let ChessService = class ChessService {
             where: { id: gameId },
             data: { pendingOpponentId: userId },
         });
-        return {
-            id: updatedGame.id,
-            creatorId: updatedGame.creatorId,
-            opponentId: updatedGame.opponentId ?? null,
-            pendingOpponentId: updatedGame.pendingOpponentId ?? null,
-            status: updatedGame.status,
-            timeControl: updatedGame.timeControl,
-            fen: updatedGame.fen,
-            moveHistory: updatedGame.moveHistory,
-            isPrivate: updatedGame.isPrivate,
-            winnerId: updatedGame.winnerId ?? null,
-        };
-    }
-    async acceptOpponent(userId, gameId) {
-        const game = await this.prisma.game.findUnique({ where: { id: gameId } });
-        if (!game)
-            throw new common_1.NotFoundException("Game not found");
-        if (game.creatorId !== userId)
-            throw new common_1.ForbiddenException("Only creator can accept");
-        if (!game.pendingOpponentId)
-            throw new common_1.BadRequestException("No pending opponent to accept");
-        const updatedGame = await this.prisma.game.update({
-            where: { id: gameId },
-            data: {
-                opponentId: game.pendingOpponentId,
-                pendingOpponentId: null,
-                status: client_1.GameStatus.ONGOING,
-            },
+        this.gateway.emitToUser(game.creatorId, "games:join-requested", {
+            gameId,
+            requesterId: userId,
         });
         return {
             id: updatedGame.id,
@@ -100,61 +106,13 @@ let ChessService = class ChessService {
             moveHistory: updatedGame.moveHistory,
             isPrivate: updatedGame.isPrivate,
             winnerId: updatedGame.winnerId ?? null,
-        };
-    }
-    async rejectOpponent(userId, gameId) {
-        const game = await this.prisma.game.findUnique({ where: { id: gameId } });
-        if (!game)
-            throw new common_1.NotFoundException("Game not found");
-        if (game.creatorId !== userId)
-            throw new common_1.ForbiddenException("Only creator can reject");
-        if (!game.pendingOpponentId)
-            throw new common_1.BadRequestException("No pending opponent to reject");
-        const updatedGame = await this.prisma.game.update({
-            where: { id: gameId },
-            data: { pendingOpponentId: null },
-        });
-        return {
-            id: updatedGame.id,
-            creatorId: updatedGame.creatorId,
-            opponentId: updatedGame.opponentId ?? null,
-            pendingOpponentId: updatedGame.pendingOpponentId ?? null,
-            status: updatedGame.status,
-            timeControl: updatedGame.timeControl,
-            fen: updatedGame.fen,
-            moveHistory: updatedGame.moveHistory,
-            isPrivate: updatedGame.isPrivate,
-            winnerId: updatedGame.winnerId ?? null,
-        };
-    }
-    async markGameDraw(gameId) {
-        const game = await this.prisma.game.findUnique({ where: { id: gameId } });
-        if (!game)
-            throw new common_1.NotFoundException("Game not found");
-        const updatedGame = await this.prisma.game.update({
-            where: { id: gameId },
-            data: {
-                status: client_1.GameStatus.DRAW,
-                winnerId: null,
-            },
-        });
-        return {
-            id: updatedGame.id,
-            creatorId: updatedGame.creatorId,
-            opponentId: updatedGame.opponentId ?? null,
-            pendingOpponentId: updatedGame.pendingOpponentId ?? null,
-            status: updatedGame.status,
-            timeControl: updatedGame.timeControl,
-            fen: updatedGame.fen,
-            moveHistory: updatedGame.moveHistory,
-            isPrivate: updatedGame.isPrivate,
-            winnerId: null,
         };
     }
 };
 exports.ChessService = ChessService;
 exports.ChessService = ChessService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        chess_gateway_1.GamesGateway])
 ], ChessService);
 //# sourceMappingURL=chess.service.js.map

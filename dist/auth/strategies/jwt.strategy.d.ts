@@ -8,15 +8,6 @@ export declare class JwtStrategy extends JwtStrategy_base {
     private readonly configService;
     private readonly userAccountService;
     constructor(configService: ConfigService, userAccountService: UserAccountService);
-    validate(payload: any): Promise<{
-        id: string;
-        email: string;
-        firstname: string;
-        lastname: string;
-        role: string;
-        isActive: true;
-        isVerified: true;
-        avatar: string | null | undefined;
-    }>;
+    validate(payload: any): Promise<import("../types/user.type").User>;
 }
 export {};

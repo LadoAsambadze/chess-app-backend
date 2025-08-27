@@ -90,7 +90,7 @@ model Game {
   creator          User        @relation("CreatedGames", fields: [creatorId], references: [id])
   opponentId       String?     
   opponent         User?       @relation("JoinedGames", fields: [opponentId], references: [id])
-  pendingOpponentId String?    // NEW: user requesting to join, waiting approval
+  pendingOpponentId String?     
   winnerId         String?
   winner           User?       @relation("WonGames", fields: [winnerId], references: [id])
   status           GameStatus

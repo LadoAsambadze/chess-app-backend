@@ -6,7 +6,6 @@ export declare class ChessController {
     private readonly chessService;
     constructor(chessService: ChessService);
     createGame(user: User, createGameDto: CreateGameDto): Promise<GameResponseDto>;
+    getAvailableGames(user: User): Promise<GameResponseDto[]>;
     joinGame(user: User, gameId: string): Promise<GameResponseDto>;
-    acceptOpponent(user: User, gameId: string): Promise<GameResponseDto>;
-    rejectOpponent(user: User, gameId: string): Promise<GameResponseDto>;
 }
