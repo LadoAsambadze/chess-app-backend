@@ -22,7 +22,7 @@ __decorate([
     (0, swagger_1.ApiProperty)({ example: 5, description: "Time control in minutes" }),
     (0, class_validator_1.IsInt)(),
     (0, class_validator_1.Min)(1),
-    (0, class_validator_1.Max)(60),
+    (0, class_validator_1.Max)(20000),
     __metadata("design:type", Number)
 ], CreateGameDto.prototype, "timeControl", void 0);
 __decorate([

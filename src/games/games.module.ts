@@ -1,20 +1,21 @@
 import { Module } from "@nestjs/common";
-import { ChessService } from "./games.service";
-import { ChessController } from "./games.controller";
+
+import { GamesController } from "./games.controller";
 import { PrismaModule } from "../prisma/prisma.module";
 import { GamesGateway } from "./games.gateway";
 import { JwtModule } from "@nestjs/jwt";
+import { GamesService } from "./games.service";
 
 @Module({
   imports: [
     PrismaModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET,
-      signOptions: { expiresIn: "24h" }, // optional
+      signOptions: { expiresIn: "24h" },
     }),
   ],
-  controllers: [ChessController],
-  providers: [ChessService, GamesGateway],
-  exports: [ChessService],
+  controllers: [GamesController],
+  providers: [GamesService, GamesGateway],
+  exports: [GamesService],
 })
 export class ChessModule {}

@@ -124,7 +124,8 @@ enum GameStatus {
   WAITING
   ONGOING
   FINISHED
-  DRAW  
+  DRAW
+  IN 
 }
 
 

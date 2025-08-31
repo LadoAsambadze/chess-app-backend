@@ -9,12 +9,12 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ChessService = void 0;
+exports.GamesService = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../prisma/prisma.service");
 const games_gateway_1 = require("./games.gateway");
-let ChessService = class ChessService {
+let GamesService = class GamesService {
     prisma;
     gateway;
     constructor(prisma, gateway) {
@@ -91,7 +91,7 @@ let ChessService = class ChessService {
             where: { id: gameId },
             data: { pendingOpponentId: userId },
         });
-        this.gateway.emitToUser(game.creatorId, "games:join-requested", {
+        this.gateway.emitToUser(game.creatorId, "game:join-requested", {
             gameId,
             requesterId: userId,
         });
@@ -108,11 +108,99 @@ let ChessService = class ChessService {
             winnerId: updatedGame.winnerId ?? null,
         };
     }
+    async acceptOpponent(userId, gameId) {
+        const game = await this.prisma.game.findUnique({ where: { id: gameId } });
+        if (!game) {
+            throw new common_1.NotFoundException("Game not found");
+        }
+        if (game.creatorId !== userId) {
+            throw new common_1.ForbiddenException("Only game creator can accept opponents");
+        }
+        if (game.status !== client_1.GameStatus.WAITING) {
+            throw new common_1.BadRequestException("Game is not waiting for opponents");
+        }
+        if (!game.pendingOpponentId) {
+            throw new common_1.BadRequestException("No pending opponent to accept");
+        }
+        const updatedGame = await this.prisma.game.update({
+            where: { id: gameId },
+            data: {
+                opponentId: game.pendingOpponentId,
+                pendingOpponentId: null,
+                status: client_1.GameStatus.ONGOING,
+            },
+        });
+        const gameResponse = {
+            id: updatedGame.id,
+            creatorId: updatedGame.creatorId,
+            opponentId: updatedGame.opponentId,
+            pendingOpponentId: null,
+            status: updatedGame.status,
+            timeControl: updatedGame.timeControl,
+            fen: updatedGame.fen,
+            moveHistory: updatedGame.moveHistory,
+            isPrivate: updatedGame.isPrivate,
+            winnerId: updatedGame.winnerId ?? null,
+        };
+        this.gateway.emitToUser(updatedGame.opponentId, "game:request-accepted", {
+            gameId,
+            game: gameResponse,
+        });
+        this.gateway.emitToUser(userId, "game:opponent-accepted", {
+            gameId,
+            game: gameResponse,
+        });
+        this.gateway.emitGameUpdated(gameResponse);
+        return gameResponse;
+    }
+    async rejectOpponent(userId, gameId) {
+        const game = await this.prisma.game.findUnique({ where: { id: gameId } });
+        if (!game) {
+            throw new common_1.NotFoundException("Game not found");
+        }
+        if (game.creatorId !== userId) {
+            throw new common_1.ForbiddenException("Only game creator can reject opponents");
+        }
+        if (game.status !== client_1.GameStatus.WAITING) {
+            throw new common_1.BadRequestException("Game is not waiting for opponents");
+        }
+        if (!game.pendingOpponentId) {
+            throw new common_1.BadRequestException("No pending opponent to reject");
+        }
+        const rejectedOpponentId = game.pendingOpponentId;
+        const updatedGame = await this.prisma.game.update({
+            where: { id: gameId },
+            data: {
+                pendingOpponentId: null,
+            },
+        });
+        const gameResponse = {
+            id: updatedGame.id,
+            creatorId: updatedGame.creatorId,
+            opponentId: updatedGame.opponentId ?? null,
+            pendingOpponentId: null,
+            status: updatedGame.status,
+            timeControl: updatedGame.timeControl,
+            fen: updatedGame.fen,
+            moveHistory: updatedGame.moveHistory,
+            isPrivate: updatedGame.isPrivate,
+            winnerId: updatedGame.winnerId ?? null,
+        };
+        this.gateway.emitToUser(rejectedOpponentId, "game:request-rejected", {
+            gameId,
+            message: "Your join request was rejected",
+        });
+        this.gateway.emitToUser(userId, "game:opponent-rejected", {
+            gameId,
+            game: gameResponse,
+        });
+        return gameResponse;
+    }
 };
-exports.ChessService = ChessService;
-exports.ChessService = ChessService = __decorate([
+exports.GamesService = GamesService;
+exports.GamesService = GamesService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         games_gateway_1.GamesGateway])
-], ChessService);
+], GamesService);
 //# sourceMappingURL=games.service.js.map

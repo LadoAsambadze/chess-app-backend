@@ -12,7 +12,7 @@ export class CreateGameDto {
   @ApiProperty({ example: 5, description: "Time control in minutes" })
   @IsInt()
   @Min(1)
-  @Max(60)
+  @Max(20000)
   timeControl: number;
 
   @ApiProperty({ example: false, description: "Is the game private?" })

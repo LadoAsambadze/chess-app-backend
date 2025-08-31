@@ -11,7 +11,7 @@ import { PrismaService } from "src/prisma/prisma.service";
 import { GamesGateway } from "./games.gateway";
 
 @Injectable()
-export class ChessService {
+export class GamesService {
   constructor(
     private prisma: PrismaService,
     private gateway: GamesGateway
@@ -99,7 +99,8 @@ export class ChessService {
       data: { pendingOpponentId: userId },
     });
 
-    this.gateway.emitToUser(game.creatorId, "games:join-requested", {
+    // Emit join request to game creator
+    this.gateway.emitToUser(game.creatorId, "game:join-requested", {
       gameId,
       requesterId: userId,
     });
@@ -118,115 +119,126 @@ export class ChessService {
     };
   }
 
-  // async acceptOpponent(
-  //   userId: string,
-  //   gameId: string
-  // ): Promise<GameResponseDto> {
-  //   const game = await this.prisma.game.findUnique({ where: { id: gameId } });
-  //   if (!game) throw new NotFoundException("Game not found");
-  //   if (game.creatorId !== userId)
-  //     throw new ForbiddenException("Only creator can accept");
-  //   if (!game.pendingOpponentId)
-  //     throw new BadRequestException("No pending opponent to accept");
+  async acceptOpponent(
+    userId: string,
+    gameId: string
+  ): Promise<GameResponseDto> {
+    const game = await this.prisma.game.findUnique({ where: { id: gameId } });
 
-  //   const updatedGame = await this.prisma.game.update({
-  //     where: { id: gameId },
-  //     data: {
-  //       opponentId: game.pendingOpponentId,
-  //       pendingOpponentId: null,
-  //       status: GameStatus.ONGOING,
-  //     },
-  //   });
+    if (!game) {
+      throw new NotFoundException("Game not found");
+    }
 
-  //   // 🔔 Notify both players + watchers
-  //   this.gateway.emitToUser(updatedGame.opponentId!, "games:join-accepted", {
-  //     gameId,
-  //   });
-  //   this.gateway.emitToUser(updatedGame.creatorId, "games:join-accepted", {
-  //     gameId,
-  //   });
-  //   this.gateway.emitToGame(gameId, "games:status", {
-  //     gameId,
-  //     status: updatedGame.status,
-  //   });
+    if (game.creatorId !== userId) {
+      throw new ForbiddenException("Only game creator can accept opponents");
+    }
 
-  //   return {
-  //     id: updatedGame.id,
-  //     creatorId: updatedGame.creatorId,
-  //     opponentId: updatedGame.opponentId ?? null,
-  //     pendingOpponentId: updatedGame.pendingOpponentId ?? null,
-  //     status: updatedGame.status,
-  //     timeControl: updatedGame.timeControl,
-  //     fen: updatedGame.fen,
-  //     moveHistory: updatedGame.moveHistory,
-  //     isPrivate: updatedGame.isPrivate,
-  //     winnerId: updatedGame.winnerId ?? null,
-  //   };
-  // }
+    if (game.status !== GameStatus.WAITING) {
+      throw new BadRequestException("Game is not waiting for opponents");
+    }
 
-  // async rejectOpponent(
-  //   userId: string,
-  //   gameId: string
-  // ): Promise<GameResponseDto> {
-  //   const game = await this.prisma.game.findUnique({ where: { id: gameId } });
-  //   if (!game) throw new NotFoundException("Game not found");
-  //   if (game.creatorId !== userId)
-  //     throw new ForbiddenException("Only creator can reject");
-  //   if (!game.pendingOpponentId)
-  //     throw new BadRequestException("No pending opponent to reject");
+    if (!game.pendingOpponentId) {
+      throw new BadRequestException("No pending opponent to accept");
+    }
 
-  //   const rejectedUserId = game.pendingOpponentId;
+    // Update game to accept the opponent
+    const updatedGame = await this.prisma.game.update({
+      where: { id: gameId },
+      data: {
+        opponentId: game.pendingOpponentId,
+        pendingOpponentId: null,
+        status: GameStatus.ONGOING,
+      },
+    });
 
-  //   const updatedGame = await this.prisma.game.update({
-  //     where: { id: gameId },
-  //     data: { pendingOpponentId: null },
-  //   });
+    const gameResponse: GameResponseDto = {
+      id: updatedGame.id,
+      creatorId: updatedGame.creatorId,
+      opponentId: updatedGame.opponentId,
+      pendingOpponentId: null,
+      status: updatedGame.status,
+      timeControl: updatedGame.timeControl,
+      fen: updatedGame.fen,
+      moveHistory: updatedGame.moveHistory,
+      isPrivate: updatedGame.isPrivate,
+      winnerId: updatedGame.winnerId ?? null,
+    };
 
-  //   // 🔔 Notify the requester they were rejected
-  //   this.gateway.emitToUser(rejectedUserId!, "games:join-rejected", { gameId });
+    // Notify the accepted player
+    this.gateway.emitToUser(updatedGame.opponentId!, "game:request-accepted", {
+      gameId,
+      game: gameResponse,
+    });
 
-  //   // 🔔 Update creator’s UI (no longer pending)
-  //   this.gateway.emitToUser(updatedGame.creatorId, "games:join-cleared", {
-  //     gameId,
-  //   });
+    // Notify the creator (for UI updates)
+    this.gateway.emitToUser(userId, "game:opponent-accepted", {
+      gameId,
+      game: gameResponse,
+    });
 
-  //   return {
-  //     id: updatedGame.id,
-  //     creatorId: updatedGame.creatorId,
-  //     opponentId: updatedGame.opponentId ?? null,
-  //     pendingOpponentId: updatedGame.pendingOpponentId ?? null,
-  //     status: updatedGame.status,
-  //     timeControl: updatedGame.timeControl,
-  //     fen: updatedGame.fen,
-  //     moveHistory: updatedGame.moveHistory,
-  //     isPrivate: updatedGame.isPrivate,
-  //     winnerId: updatedGame.winnerId ?? null,
-  //   };
-  // }
+    // Update the games list for all users
+    this.gateway.emitGameUpdated(gameResponse);
 
-  // async markGameDraw(gameId: string): Promise<GameResponseDto> {
-  //   const game = await this.prisma.game.findUnique({ where: { id: gameId } });
-  //   if (!game) throw new NotFoundException("Game not found");
+    return gameResponse;
+  }
 
-  //   const updatedGame = await this.prisma.game.update({
-  //     where: { id: gameId },
-  //     data: { status: GameStatus.DRAW, winnerId: null },
-  //   });
+  async rejectOpponent(
+    userId: string,
+    gameId: string
+  ): Promise<GameResponseDto> {
+    const game = await this.prisma.game.findUnique({ where: { id: gameId } });
 
-  //   // 🔔 Notify everyone watching the game
-  //   this.gateway.emitToGame(gameId, "games:draw", { gameId });
+    if (!game) {
+      throw new NotFoundException("Game not found");
+    }
 
-  //   return {
-  //     id: updatedGame.id,
-  //     creatorId: updatedGame.creatorId,
-  //     opponentId: updatedGame.opponentId ?? null,
-  //     pendingOpponentId: updatedGame.pendingOpponentId ?? null,
-  //     status: updatedGame.status,
-  //     timeControl: updatedGame.timeControl,
-  //     fen: updatedGame.fen,
-  //     moveHistory: updatedGame.moveHistory,
-  //     isPrivate: updatedGame.isPrivate,
-  //     winnerId: null,
-  //   };
-  // }
+    if (game.creatorId !== userId) {
+      throw new ForbiddenException("Only game creator can reject opponents");
+    }
+
+    if (game.status !== GameStatus.WAITING) {
+      throw new BadRequestException("Game is not waiting for opponents");
+    }
+
+    if (!game.pendingOpponentId) {
+      throw new BadRequestException("No pending opponent to reject");
+    }
+
+    const rejectedOpponentId = game.pendingOpponentId;
+
+    // Clear the pending opponent
+    const updatedGame = await this.prisma.game.update({
+      where: { id: gameId },
+      data: {
+        pendingOpponentId: null,
+      },
+    });
+
+    const gameResponse: GameResponseDto = {
+      id: updatedGame.id,
+      creatorId: updatedGame.creatorId,
+      opponentId: updatedGame.opponentId ?? null,
+      pendingOpponentId: null,
+      status: updatedGame.status,
+      timeControl: updatedGame.timeControl,
+      fen: updatedGame.fen,
+      moveHistory: updatedGame.moveHistory,
+      isPrivate: updatedGame.isPrivate,
+      winnerId: updatedGame.winnerId ?? null,
+    };
+
+    // Notify the rejected player
+    this.gateway.emitToUser(rejectedOpponentId, "game:request-rejected", {
+      gameId,
+      message: "Your join request was rejected",
+    });
+
+    // Notify the creator (for UI updates)
+    this.gateway.emitToUser(userId, "game:opponent-rejected", {
+      gameId,
+      game: gameResponse,
+    });
+
+    return gameResponse;
+  }
 }
