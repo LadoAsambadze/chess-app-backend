@@ -1,5 +1,5 @@
 import { Controller, Post, Body, UseGuards, Param, Get } from "@nestjs/common";
-import { ChessService } from "./chess.service";
+import { ChessService } from "./games.service";
 import { CreateGameDto } from "./dto/create-game.dto";
 import { AuthGuard } from "@nestjs/passport";
 import { ApiBearerAuth, ApiBody } from "@nestjs/swagger";
@@ -19,7 +19,6 @@ export class ChessController {
     @CurrentUser() user: User,
     @Body() createGameDto: CreateGameDto
   ): Promise<GameResponseDto> {
- 
     return this.chessService.createGame(user.id, createGameDto);
   }
 

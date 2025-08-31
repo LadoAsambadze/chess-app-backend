@@ -1,4 +1,4 @@
-import { ChessService } from "./chess.service";
+import { ChessService } from "./games.service";
 import { CreateGameDto } from "./dto/create-game.dto";
 import { User } from "src/auth/types/user.type";
 import { GameResponseDto } from "./dto/game-response.dto";

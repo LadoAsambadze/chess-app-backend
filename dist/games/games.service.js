@@ -13,7 +13,7 @@ exports.ChessService = void 0;
 const common_1 = require("@nestjs/common");
 const client_1 = require("@prisma/client");
 const prisma_service_1 = require("../prisma/prisma.service");
-const chess_gateway_1 = require("./chess.gateway");
+const games_gateway_1 = require("./games.gateway");
 let ChessService = class ChessService {
     prisma;
     gateway;
@@ -113,6 +113,6 @@ exports.ChessService = ChessService;
 exports.ChessService = ChessService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        chess_gateway_1.GamesGateway])
+        games_gateway_1.GamesGateway])
 ], ChessService);
-//# sourceMappingURL=chess.service.js.map
+//# sourceMappingURL=games.service.js.map

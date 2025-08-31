@@ -8,7 +8,7 @@ import { GameStatus } from "@prisma/client";
 import type { CreateGameDto } from "./dto/create-game.dto";
 import { GameResponseDto } from "./dto/game-response.dto";
 import { PrismaService } from "src/prisma/prisma.service";
-import { GamesGateway } from "./chess.gateway";
+import { GamesGateway } from "./games.gateway";
 
 @Injectable()
 export class ChessService {
@@ -99,7 +99,6 @@ export class ChessService {
       data: { pendingOpponentId: userId },
     });
 
-   
     this.gateway.emitToUser(game.creatorId, "games:join-requested", {
       gameId,
       requesterId: userId,

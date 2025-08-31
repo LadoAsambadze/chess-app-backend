@@ -32,4 +32,4 @@ exports.GamesGateway = GamesGateway = __decorate([
         cors: { origin: true, credentials: true },
     })
 ], GamesGateway);
-//# sourceMappingURL=chess.gateway.js.map
+//# sourceMappingURL=games.gateway.js.map

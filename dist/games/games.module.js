@@ -8,10 +8,10 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChessModule = void 0;
 const common_1 = require("@nestjs/common");
-const chess_service_1 = require("./chess.service");
-const chess_controller_1 = require("./chess.controller");
+const games_service_1 = require("./games.service");
+const games_controller_1 = require("./games.controller");
 const prisma_module_1 = require("../prisma/prisma.module");
-const chess_gateway_1 = require("./chess.gateway");
+const games_gateway_1 = require("./games.gateway");
 const jwt_1 = require("@nestjs/jwt");
 let ChessModule = class ChessModule {
 };
@@ -25,9 +25,9 @@ exports.ChessModule = ChessModule = __decorate([
                 signOptions: { expiresIn: "24h" },
             }),
         ],
-        controllers: [chess_controller_1.ChessController],
-        providers: [chess_service_1.ChessService, chess_gateway_1.GamesGateway],
-        exports: [chess_service_1.ChessService],
+        controllers: [games_controller_1.ChessController],
+        providers: [games_service_1.ChessService, games_gateway_1.GamesGateway],
+        exports: [games_service_1.ChessService],
     })
 ], ChessModule);
-//# sourceMappingURL=chess.module.js.map
+//# sourceMappingURL=games.module.js.map

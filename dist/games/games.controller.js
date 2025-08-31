@@ -14,7 +14,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.ChessController = void 0;
 const common_1 = require("@nestjs/common");
-const chess_service_1 = require("./chess.service");
+const games_service_1 = require("./games.service");
 const create_game_dto_1 = require("./dto/create-game.dto");
 const passport_1 = require("@nestjs/passport");
 const swagger_1 = require("@nestjs/swagger");
@@ -67,6 +67,6 @@ __decorate([
 ], ChessController.prototype, "joinGame", null);
 exports.ChessController = ChessController = __decorate([
     (0, common_1.Controller)("games"),
-    __metadata("design:paramtypes", [chess_service_1.ChessService])
+    __metadata("design:paramtypes", [games_service_1.ChessService])
 ], ChessController);
-//# sourceMappingURL=chess.controller.js.map
+//# sourceMappingURL=games.controller.js.map

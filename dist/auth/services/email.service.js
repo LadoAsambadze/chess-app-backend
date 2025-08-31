@@ -19,10 +19,10 @@ let EmailService = class EmailService {
     constructor(config) {
         this.config = config;
         this.transporter = nodemailer.createTransport({
-            service: 'gmail',
+            service: "gmail",
             auth: {
-                user: this.config.get('EMAIL_USER'),
-                pass: this.config.get('EMAIL_APP_PASSWORD'),
+                user: this.config.get("EMAIL_USER"),
+                pass: this.config.get("EMAIL_APP_PASSWORD"),
             },
             tls: {
                 rejectUnauthorized: false,
@@ -34,7 +34,7 @@ let EmailService = class EmailService {
         const mailOptions = {
             from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
             to: email,
-            subject: 'Verify Your Email Address',
+            subject: "Verify Your Email Address",
             html: `
                 <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                     <h2 style="color: #333;">Welcome ${firstname}!</h2>
@@ -60,10 +60,10 @@ let EmailService = class EmailService {
         };
         try {
             await this.transporter.sendMail(mailOptions);
-            console.log('Verification email sent successfully');
+            console.log("Verification email sent successfully");
         }
         catch (error) {
-            console.error('Error sending verification email:', error);
+            console.error("Error sending verification email:", error);
             throw error;
         }
     }
@@ -72,7 +72,7 @@ let EmailService = class EmailService {
         const mailOptions = {
             from: process.env.EMAIL_FROM || process.env.EMAIL_USER,
             to: email,
-            subject: 'Reset Your Password',
+            subject: "Reset Your Password",
             html: `
             <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
                 
@@ -98,13 +98,13 @@ let EmailService = class EmailService {
         };
         try {
             await this.transporter.sendMail(mailOptions);
-            console.log('Password update email sent successfully');
+            console.log("Password update email sent successfully");
         }
         catch (error) {
-            console.error('Error sending password update email:', error);
+            console.error("Error sending password update email:", error);
             throw error;
         }
-        return 'success';
+        return "success";
     }
 };
 exports.EmailService = EmailService;

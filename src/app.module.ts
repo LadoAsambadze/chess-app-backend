@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { ConfigModule } from "@nestjs/config";
 import { PrismaModule } from "./prisma/prisma.module";
 import { AuthModule } from "./auth/auth.module";
-import { ChessModule } from "./chess/chess.module";
+import { ChessModule } from "./games/games.module";
 
 @Module({
   imports: [

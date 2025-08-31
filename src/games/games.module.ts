@@ -1,8 +1,8 @@
 import { Module } from "@nestjs/common";
-import { ChessService } from "./chess.service";
-import { ChessController } from "./chess.controller";
+import { ChessService } from "./games.service";
+import { ChessController } from "./games.controller";
 import { PrismaModule } from "../prisma/prisma.module";
-import { GamesGateway } from "./chess.gateway";
+import { GamesGateway } from "./games.gateway";
 import { JwtModule } from "@nestjs/jwt";
 
 @Module({

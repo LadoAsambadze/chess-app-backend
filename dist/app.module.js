@@ -11,7 +11,7 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const prisma_module_1 = require("./prisma/prisma.module");
 const auth_module_1 = require("./auth/auth.module");
-const chess_module_1 = require("./chess/chess.module");
+const games_module_1 = require("./games/games.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -24,7 +24,7 @@ exports.AppModule = AppModule = __decorate([
             }),
             prisma_module_1.PrismaModule,
             auth_module_1.AuthModule,
-            chess_module_1.ChessModule,
+            games_module_1.ChessModule,
         ],
     })
 ], AppModule);
