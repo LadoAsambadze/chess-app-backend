@@ -19,9 +19,6 @@ export class GamesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   private userSockets = new Map<string, string>(); // userId -> socketId
 
   handleConnection(client: Socket) {
-    console.log("🔌 Client connected:", client.id);
-
-    // Get userId from auth or query params
     const userId =
       client.handshake.auth?.userId || client.handshake.query?.userId;
     console.log("👤 User ID from handshake:", userId);

@@ -179,8 +179,7 @@ export class AuthController {
     try {
       const result = await this.authService.signupOrLoginWithGoogle(req, res);
 
-      const redirectUrl = `http://localhost:5173/auth/success?token=${result.accessToken}`;
-
+      const redirectUrl = `http://localhost:5173/auth-success/#accessToken=${result.accessToken}`;
       res.redirect(redirectUrl);
     } catch (error) {
       console.error("❌ Google auth error:", error);

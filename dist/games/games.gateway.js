@@ -16,7 +16,6 @@ let GamesGateway = class GamesGateway {
     server;
     userSockets = new Map();
     handleConnection(client) {
-        console.log("🔌 Client connected:", client.id);
         const userId = client.handshake.auth?.userId || client.handshake.query?.userId;
         console.log("👤 User ID from handshake:", userId);
         if (userId) {

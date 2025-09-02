@@ -29,7 +29,7 @@ model User {
   accounts   Account[]
   sessions   Session[]
   
-  // Relations to games
+ 
   createdGames Game[] @relation("CreatedGames")
   joinedGames  Game[] @relation("JoinedGames")
   wonGames     Game[] @relation("WonGames")
