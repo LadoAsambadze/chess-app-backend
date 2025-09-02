@@ -1,4 +1,12 @@
-import { Controller, Post, Body, UseGuards, Param, Get } from "@nestjs/common";
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  Param,
+  Get,
+  Delete,
+} from "@nestjs/common";
 import { GamesService } from "./games.service";
 import { CreateGameDto } from "./dto/create-game.dto";
 import { AuthGuard } from "@nestjs/passport";
@@ -54,5 +62,19 @@ export class GamesController {
     @Param("gameId") gameId: string
   ) {
     return this.gamesService.rejectOpponent(user.id, gameId);
+  }
+
+  @Delete("cancel/:gameId")
+  @UseGuards(AuthGuard("jwt"))
+  @ApiBearerAuth("access_token")
+  async cancelGame(@CurrentUser() user: User, @Param("gameId") gameId: string) {
+    return this.gamesService.cancelGame(user.id, gameId);
+  }
+
+  @Post("leave/:gameId")
+  @UseGuards(AuthGuard("jwt"))
+  @ApiBearerAuth("access_token")
+  async leaveGame(@CurrentUser() user: User, @Param("gameId") gameId: string) {
+    return this.gamesService.leaveGame(user.id, gameId);
   }
 }

@@ -28,6 +28,17 @@ let GamesService = class GamesService {
         if (dto.isPrivate && !dto.password) {
             throw new common_1.BadRequestException("Private games must have a password.");
         }
+        const existingGame = await this.prisma.game.findFirst({
+            where: {
+                OR: [{ creatorId: userId }, { opponentId: userId }],
+                status: {
+                    in: [client_1.GameStatus.WAITING, client_1.GameStatus.IN_PROGRESS],
+                },
+            },
+        });
+        if (existingGame) {
+            throw new common_1.BadRequestException("You already have an active game. Please finish or leave your current game before creating a new one.");
+        }
         const newGame = await this.prisma.game.create({
             data: {
                 creatorId: userId,
@@ -127,7 +138,7 @@ let GamesService = class GamesService {
             data: {
                 opponentId: game.pendingOpponentId,
                 pendingOpponentId: null,
-                status: client_1.GameStatus.ONGOING,
+                status: client_1.GameStatus.IN_PROGRESS,
             },
         });
         const gameResponse = {
@@ -195,6 +206,102 @@ let GamesService = class GamesService {
             game: gameResponse,
         });
         return gameResponse;
+    }
+    async cancelGame(userId, gameId) {
+        if (!userId || !gameId) {
+            throw new common_1.BadRequestException("User ID and Game ID are required.");
+        }
+        const game = await this.prisma.game.findUnique({
+            where: { id: gameId },
+        });
+        if (!game) {
+            throw new common_1.NotFoundException("Game not found.");
+        }
+        if (game.creatorId !== userId) {
+            throw new common_1.ForbiddenException("Only the game creator can cancel the game.");
+        }
+        if (game.status !== client_1.GameStatus.WAITING) {
+            throw new common_1.BadRequestException("Can only cancel games that are waiting for players.");
+        }
+        await this.prisma.game.update({
+            where: { id: gameId },
+            data: {
+                status: client_1.GameStatus.CANCELLED,
+                pendingOpponentId: null,
+            },
+        });
+        if (game.pendingOpponentId) {
+            this.gateway.emitGameCancelled(gameId, game.pendingOpponentId);
+        }
+        this.gateway.emitGameRemoved(gameId);
+        return { message: "Game cancelled successfully." };
+    }
+    async leaveGame(userId, gameId) {
+        if (!userId || !gameId) {
+            throw new common_1.BadRequestException("User ID and Game ID are required.");
+        }
+        const game = await this.prisma.game.findUnique({
+            where: { id: gameId },
+        });
+        if (!game) {
+            throw new common_1.NotFoundException("Game not found.");
+        }
+        if (game.creatorId !== userId &&
+            game.opponentId !== userId &&
+            game.pendingOpponentId !== userId) {
+            throw new common_1.ForbiddenException("You are not part of this game.");
+        }
+        if (game.status === client_1.GameStatus.IN_PROGRESS) {
+            const winnerId = game.creatorId === userId ? game.opponentId : game.creatorId;
+            await this.prisma.game.update({
+                where: { id: gameId },
+                data: {
+                    status: client_1.GameStatus.FINISHED,
+                    winnerId: winnerId,
+                },
+            });
+            this.gateway.emitGameFinished(gameId, winnerId, "forfeit");
+            return { message: "You have forfeited the game." };
+        }
+        else if (game.status === client_1.GameStatus.WAITING) {
+            if (game.creatorId === userId) {
+                return this.cancelGame(userId, gameId);
+            }
+            else if (game.pendingOpponentId === userId) {
+                await this.prisma.game.update({
+                    where: { id: gameId },
+                    data: {
+                        pendingOpponentId: null,
+                    },
+                });
+                this.gateway.emitJoinRequestWithdrawn(gameId, game.creatorId);
+                return { message: "Join request withdrawn successfully." };
+            }
+            else if (game.opponentId === userId) {
+                await this.prisma.game.update({
+                    where: { id: gameId },
+                    data: {
+                        opponentId: null,
+                        status: client_1.GameStatus.WAITING,
+                    },
+                });
+                this.gateway.emitOpponentLeft(gameId, game.creatorId);
+                this.gateway.emitGameCreated({
+                    id: game.id,
+                    creatorId: game.creatorId,
+                    opponentId: null,
+                    pendingOpponentId: null,
+                    status: client_1.GameStatus.WAITING,
+                    timeControl: game.timeControl,
+                    fen: game.fen,
+                    moveHistory: game.moveHistory,
+                    isPrivate: game.isPrivate,
+                    winnerId: null,
+                });
+                return { message: "Left the game successfully." };
+            }
+        }
+        throw new common_1.BadRequestException("Cannot leave game in current state.");
     }
 };
 exports.GamesService = GamesService;

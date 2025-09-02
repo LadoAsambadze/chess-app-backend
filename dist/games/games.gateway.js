@@ -95,6 +95,21 @@ let GamesGateway = class GamesGateway {
             console.log("📊 Available users:", Object.keys(Object.fromEntries(this.userSockets)));
         }
     }
+    emitGameCancelled(gameId, userId) {
+        this.server.to(userId).emit("game-cancelled", { gameId });
+    }
+    emitGameRemoved(gameId) {
+        this.server.emit("game-removed", { gameId });
+    }
+    emitJoinRequestWithdrawn(gameId, creatorId) {
+        this.server.to(creatorId).emit("join-request-withdrawn", { gameId });
+    }
+    emitOpponentLeft(gameId, creatorId) {
+        this.server.to(creatorId).emit("opponent-left", { gameId });
+    }
+    emitGameFinished(gameId, winnerId, reason) {
+        this.server.emit("game-finished", { gameId, winnerId, reason });
+    }
 };
 exports.GamesGateway = GamesGateway;
 __decorate([

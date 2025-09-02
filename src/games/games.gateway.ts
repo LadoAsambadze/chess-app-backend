@@ -147,4 +147,24 @@ export class GamesGateway implements OnGatewayConnection, OnGatewayDisconnect {
       );
     }
   }
+
+  emitGameCancelled(gameId: string, userId: string) {
+    this.server.to(userId).emit("game-cancelled", { gameId });
+  }
+
+  emitGameRemoved(gameId: string) {
+    this.server.emit("game-removed", { gameId });
+  }
+
+  emitJoinRequestWithdrawn(gameId: string, creatorId: string) {
+    this.server.to(creatorId).emit("join-request-withdrawn", { gameId });
+  }
+
+  emitOpponentLeft(gameId: string, creatorId: string) {
+    this.server.to(creatorId).emit("opponent-left", { gameId });
+  }
+
+  emitGameFinished(gameId: string, winnerId: string | null, reason: string) {
+    this.server.emit("game-finished", { gameId, winnerId, reason });
+  }
 }

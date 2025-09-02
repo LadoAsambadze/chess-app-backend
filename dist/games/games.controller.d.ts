@@ -10,4 +10,10 @@ export declare class GamesController {
     joinGame(user: User, gameId: string): Promise<GameResponseDto>;
     acceptOpponent(user: User, gameId: string): Promise<GameResponseDto>;
     rejectOpponent(user: User, gameId: string): Promise<GameResponseDto>;
+    cancelGame(user: User, gameId: string): Promise<{
+        message: string;
+    }>;
+    leaveGame(user: User, gameId: string): Promise<{
+        message: string;
+    }>;
 }

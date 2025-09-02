@@ -122,10 +122,13 @@ enum TokenType {
 
 enum GameStatus {
   WAITING
-  ONGOING
+  IN_PROGRESS
   FINISHED
   DRAW
-  IN 
+  CANCELLED
 }
 
 
+
+
+ 

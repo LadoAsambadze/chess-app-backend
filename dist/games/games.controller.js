@@ -39,6 +39,12 @@ let GamesController = class GamesController {
     async rejectOpponent(user, gameId) {
         return this.gamesService.rejectOpponent(user.id, gameId);
     }
+    async cancelGame(user, gameId) {
+        return this.gamesService.cancelGame(user.id, gameId);
+    }
+    async leaveGame(user, gameId) {
+        return this.gamesService.leaveGame(user.id, gameId);
+    }
 };
 exports.GamesController = GamesController;
 __decorate([
@@ -91,6 +97,26 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], GamesController.prototype, "rejectOpponent", null);
+__decorate([
+    (0, common_1.Delete)("cancel/:gameId"),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)("jwt")),
+    (0, swagger_1.ApiBearerAuth)("access_token"),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)("gameId")),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], GamesController.prototype, "cancelGame", null);
+__decorate([
+    (0, common_1.Post)("leave/:gameId"),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)("jwt")),
+    (0, swagger_1.ApiBearerAuth)("access_token"),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)("gameId")),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], GamesController.prototype, "leaveGame", null);
 exports.GamesController = GamesController = __decorate([
     (0, common_1.Controller)("games"),
     __metadata("design:paramtypes", [games_service_1.GamesService])

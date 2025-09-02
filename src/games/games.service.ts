@@ -29,6 +29,22 @@ export class GamesService {
       throw new BadRequestException("Private games must have a password.");
     }
 
+    // Check if user already has an active game (as creator or participant)
+    const existingGame = await this.prisma.game.findFirst({
+      where: {
+        OR: [{ creatorId: userId }, { opponentId: userId }],
+        status: {
+          in: [GameStatus.WAITING, GameStatus.IN_PROGRESS],
+        },
+      },
+    });
+
+    if (existingGame) {
+      throw new BadRequestException(
+        "You already have an active game. Please finish or leave your current game before creating a new one."
+      );
+    }
+
     const newGame = await this.prisma.game.create({
       data: {
         creatorId: userId,
@@ -147,7 +163,7 @@ export class GamesService {
       data: {
         opponentId: game.pendingOpponentId,
         pendingOpponentId: null,
-        status: GameStatus.ONGOING,
+        status: GameStatus.IN_PROGRESS,
       },
     });
 
@@ -240,5 +256,148 @@ export class GamesService {
     });
 
     return gameResponse;
+  }
+
+  // Add these methods to your GamesService class
+
+  async cancelGame(
+    userId: string,
+    gameId: string
+  ): Promise<{ message: string }> {
+    if (!userId || !gameId) {
+      throw new BadRequestException("User ID and Game ID are required.");
+    }
+
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+    });
+
+    if (!game) {
+      throw new NotFoundException("Game not found.");
+    }
+
+    // Only the creator can cancel the game
+    if (game.creatorId !== userId) {
+      throw new ForbiddenException(
+        "Only the game creator can cancel the game."
+      );
+    }
+
+    // Can only cancel games that are waiting or have a pending opponent
+    if (game.status !== GameStatus.WAITING) {
+      throw new BadRequestException(
+        "Can only cancel games that are waiting for players."
+      );
+    }
+
+    // Update game status to cancelled
+    await this.prisma.game.update({
+      where: { id: gameId },
+      data: {
+        status: GameStatus.CANCELLED, // You'll need to add this to your GameStatus enum
+        pendingOpponentId: null,
+      },
+    });
+
+    // Notify pending opponent if there was one
+    if (game.pendingOpponentId) {
+      this.gateway.emitGameCancelled(gameId, game.pendingOpponentId);
+    }
+
+    // Notify all clients that this game is no longer available
+    this.gateway.emitGameRemoved(gameId);
+
+    return { message: "Game cancelled successfully." };
+  }
+
+  async leaveGame(
+    userId: string,
+    gameId: string
+  ): Promise<{ message: string }> {
+    if (!userId || !gameId) {
+      throw new BadRequestException("User ID and Game ID are required.");
+    }
+
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+    });
+
+    if (!game) {
+      throw new NotFoundException("Game not found.");
+    }
+
+    // Check if user is part of this game
+    if (
+      game.creatorId !== userId &&
+      game.opponentId !== userId &&
+      game.pendingOpponentId !== userId
+    ) {
+      throw new ForbiddenException("You are not part of this game.");
+    }
+
+    if (game.status === GameStatus.IN_PROGRESS) {
+      // If game is in progress, the leaving player forfeits
+      const winnerId =
+        game.creatorId === userId ? game.opponentId : game.creatorId;
+
+      await this.prisma.game.update({
+        where: { id: gameId },
+        data: {
+          status: GameStatus.FINISHED,
+          winnerId: winnerId,
+        },
+      });
+
+      // Notify the other player
+      this.gateway.emitGameFinished(gameId, winnerId, "forfeit");
+
+      return { message: "You have forfeited the game." };
+    } else if (game.status === GameStatus.WAITING) {
+      if (game.creatorId === userId) {
+        // Creator leaving = cancel the game
+        return this.cancelGame(userId, gameId);
+      } else if (game.pendingOpponentId === userId) {
+        // Pending opponent leaving = remove their join request
+        await this.prisma.game.update({
+          where: { id: gameId },
+          data: {
+            pendingOpponentId: null,
+          },
+        });
+
+        // Notify the creator
+        this.gateway.emitJoinRequestWithdrawn(gameId, game.creatorId);
+
+        return { message: "Join request withdrawn successfully." };
+      } else if (game.opponentId === userId) {
+        // Opponent leaving waiting game = reset to waiting state
+        await this.prisma.game.update({
+          where: { id: gameId },
+          data: {
+            opponentId: null,
+            status: GameStatus.WAITING,
+          },
+        });
+
+        // Notify the creator and make game available again
+        this.gateway.emitOpponentLeft(gameId, game.creatorId);
+        this.gateway.emitGameCreated({
+          id: game.id,
+          creatorId: game.creatorId,
+          opponentId: null,
+          pendingOpponentId: null,
+          status: GameStatus.WAITING,
+          timeControl: game.timeControl,
+          fen: game.fen,
+          moveHistory: game.moveHistory,
+          isPrivate: game.isPrivate,
+          winnerId: null,
+        });
+
+        return { message: "Left the game successfully." };
+      }
+    }
+
+    throw new BadRequestException("Cannot leave game in current state.");
   }
 }

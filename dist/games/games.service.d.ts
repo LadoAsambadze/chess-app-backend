@@ -11,4 +11,10 @@ export declare class GamesService {
     joinGame(userId: string, gameId: string): Promise<GameResponseDto>;
     acceptOpponent(userId: string, gameId: string): Promise<GameResponseDto>;
     rejectOpponent(userId: string, gameId: string): Promise<GameResponseDto>;
+    cancelGame(userId: string, gameId: string): Promise<{
+        message: string;
+    }>;
+    leaveGame(userId: string, gameId: string): Promise<{
+        message: string;
+    }>;
 }
