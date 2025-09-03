@@ -223,18 +223,16 @@ let GamesService = class GamesService {
         if (game.status !== client_1.GameStatus.WAITING) {
             throw new common_1.BadRequestException("Can only cancel games that are waiting for players.");
         }
-        await this.prisma.game.update({
-            where: { id: gameId },
-            data: {
-                status: client_1.GameStatus.CANCELLED,
-                pendingOpponentId: null,
-            },
-        });
         if (game.pendingOpponentId) {
-            this.gateway.emitGameCancelled(gameId, game.pendingOpponentId);
+            this.gateway.emitToUser(game.pendingOpponentId, "game:cancelled", {
+                gameId,
+            });
         }
+        await this.prisma.game.delete({
+            where: { id: gameId },
+        });
         this.gateway.emitGameRemoved(gameId);
-        return { message: "Game cancelled successfully." };
+        return { message: "Game cancelled and deleted successfully." };
     }
     async leaveGame(userId, gameId) {
         if (!userId || !gameId) {
@@ -246,62 +244,24 @@ let GamesService = class GamesService {
         if (!game) {
             throw new common_1.NotFoundException("Game not found.");
         }
-        if (game.creatorId !== userId &&
-            game.opponentId !== userId &&
-            game.pendingOpponentId !== userId) {
+        if (game.creatorId !== userId && game.opponentId !== userId) {
             throw new common_1.ForbiddenException("You are not part of this game.");
         }
-        if (game.status === client_1.GameStatus.IN_PROGRESS) {
-            const winnerId = game.creatorId === userId ? game.opponentId : game.creatorId;
-            await this.prisma.game.update({
-                where: { id: gameId },
-                data: {
-                    status: client_1.GameStatus.FINISHED,
-                    winnerId: winnerId,
-                },
-            });
-            this.gateway.emitGameFinished(gameId, winnerId, "forfeit");
-            return { message: "You have forfeited the game." };
+        if (game.status !== client_1.GameStatus.IN_PROGRESS) {
+            throw new common_1.BadRequestException("You can only leave games that are currently in progress.");
         }
-        else if (game.status === client_1.GameStatus.WAITING) {
-            if (game.creatorId === userId) {
-                return this.cancelGame(userId, gameId);
-            }
-            else if (game.pendingOpponentId === userId) {
-                await this.prisma.game.update({
-                    where: { id: gameId },
-                    data: {
-                        pendingOpponentId: null,
-                    },
-                });
-                this.gateway.emitJoinRequestWithdrawn(gameId, game.creatorId);
-                return { message: "Join request withdrawn successfully." };
-            }
-            else if (game.opponentId === userId) {
-                await this.prisma.game.update({
-                    where: { id: gameId },
-                    data: {
-                        opponentId: null,
-                        status: client_1.GameStatus.WAITING,
-                    },
-                });
-                this.gateway.emitOpponentLeft(gameId, game.creatorId);
-                this.gateway.emitGameCreated({
-                    id: game.id,
-                    creatorId: game.creatorId,
-                    opponentId: null,
-                    pendingOpponentId: null,
-                    status: client_1.GameStatus.WAITING,
-                    timeControl: game.timeControl,
-                    fen: game.fen,
-                    moveHistory: game.moveHistory,
-                    isPrivate: game.isPrivate,
-                    winnerId: null,
-                });
-                return { message: "Left the game successfully." };
-            }
-        }
-        throw new common_1.BadRequestException("Cannot leave game in current state.");
+        const winnerId = game.creatorId === userId ? game.opponentId : game.creatorId;
+        await this.prisma.game.update({
+            where: { id: gameId },
+            data: {
+                status: client_1.GameStatus.FINISHED,
+                winnerId: winnerId,
+            },
+        });
+        this.gateway.emitGameFinished(gameId, winnerId, "forfeit");
+        return {
+            message: "You have forfeited the game. The opponent wins by forfeit.",
+        };
     }
 };
 exports.GamesService = GamesService;

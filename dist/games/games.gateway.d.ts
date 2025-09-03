@@ -16,9 +16,6 @@ export declare class GamesGateway implements OnGatewayConnection, OnGatewayDisco
     emitGameCreated(game: GameResponseDto): void;
     emitGameUpdated(game: GameResponseDto): void;
     emitToUser(userId: string, event: string, data: any): void;
-    emitGameCancelled(gameId: string, userId: string): void;
     emitGameRemoved(gameId: string): void;
-    emitJoinRequestWithdrawn(gameId: string, creatorId: string): void;
-    emitOpponentLeft(gameId: string, creatorId: string): void;
     emitGameFinished(gameId: string, winnerId: string | null, reason: string): void;
 }
