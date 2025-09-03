@@ -12,6 +12,8 @@ import { GamesGateway } from "./games.gateway";
 
 @Injectable()
 export class GamesService {
+  private pendingRequests = new Map<string, NodeJS.Timeout>(); // gameId -> timeout
+
   constructor(
     private prisma: PrismaService,
     private gateway: GamesGateway
@@ -115,13 +117,31 @@ export class GamesService {
       data: { pendingOpponentId: userId },
     });
 
+    // Set up auto-reject timeout (30 seconds)
+    const timeout = setTimeout(async () => {
+      try {
+        const currentGame = await this.prisma.game.findUnique({
+          where: { id: gameId }
+        });
+        
+        if (currentGame && currentGame.pendingOpponentId === userId && currentGame.status === GameStatus.WAITING) {
+          await this.autoRejectJoinRequest(gameId, userId);
+        }
+      } catch (error) {
+        console.error('Error in auto-reject timeout:', error);
+      }
+      this.pendingRequests.delete(gameId);
+    }, 30000); // 30 seconds timeout
+
+    this.pendingRequests.set(gameId, timeout);
+
     // Emit join request to game creator
     this.gateway.emitToUser(game.creatorId, "game:join-requested", {
       gameId,
       requesterId: userId,
     });
 
-    return {
+    const gameResponse: GameResponseDto = {
       id: updatedGame.id,
       creatorId: updatedGame.creatorId,
       opponentId: updatedGame.opponentId ?? null,
@@ -133,12 +153,68 @@ export class GamesService {
       isPrivate: updatedGame.isPrivate,
       winnerId: updatedGame.winnerId ?? null,
     };
+
+    // Update the games list for all users to show pending status
+    this.gateway.emitGameUpdated(gameResponse);
+
+    return gameResponse;
+  }
+
+  private async autoRejectJoinRequest(gameId: string, requesterId: string): Promise<void> {
+    try {
+      const game = await this.prisma.game.findUnique({ where: { id: gameId } });
+      
+      if (!game || game.pendingOpponentId !== requesterId) {
+        return; // Request already handled
+      }
+
+      // Clear the pending opponent
+      const updatedGame = await this.prisma.game.update({
+        where: { id: gameId },
+        data: { pendingOpponentId: null },
+      });
+
+      const gameResponse: GameResponseDto = {
+        id: updatedGame.id,
+        creatorId: updatedGame.creatorId,
+        opponentId: updatedGame.opponentId ?? null,
+        pendingOpponentId: null,
+        status: updatedGame.status,
+        timeControl: updatedGame.timeControl,
+        fen: updatedGame.fen,
+        moveHistory: updatedGame.moveHistory,
+        isPrivate: updatedGame.isPrivate,
+        winnerId: updatedGame.winnerId ?? null,
+      };
+
+      // Notify the requester that their request timed out
+      this.gateway.emitToUser(requesterId, "game:request-timeout", {
+        gameId,
+        message: "Your join request timed out",
+        game: gameResponse,
+      });
+
+      // Close modal for creator if still open
+      this.gateway.emitToUser(game.creatorId, "game:modal-close", { gameId });
+
+      // Update the games list for all users
+      this.gateway.emitGameUpdated(gameResponse);
+    } catch (error) {
+      console.error('Error in auto-reject:', error);
+    }
   }
 
   async acceptOpponent(
     userId: string,
     gameId: string
   ): Promise<GameResponseDto> {
+    // Clear any pending timeout
+    const timeout = this.pendingRequests.get(gameId);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.pendingRequests.delete(gameId);
+    }
+
     const game = await this.prisma.game.findUnique({ where: { id: gameId } });
 
     if (!game) {
@@ -186,7 +262,7 @@ export class GamesService {
       game: gameResponse,
     });
 
-    // Notify the creator (for UI updates)
+    // Notify the creator (for UI updates) - this will close the modal
     this.gateway.emitToUser(userId, "game:opponent-accepted", {
       gameId,
       game: gameResponse,
@@ -202,6 +278,13 @@ export class GamesService {
     userId: string,
     gameId: string
   ): Promise<GameResponseDto> {
+    // Clear any pending timeout
+    const timeout = this.pendingRequests.get(gameId);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.pendingRequests.delete(gameId);
+    }
+
     const game = await this.prisma.game.findUnique({ where: { id: gameId } });
 
     if (!game) {
@@ -247,13 +330,17 @@ export class GamesService {
     this.gateway.emitToUser(rejectedOpponentId, "game:request-rejected", {
       gameId,
       message: "Your join request was rejected",
+      game: gameResponse,
     });
 
-    // Notify the creator (for UI updates)
+    // Notify the creator (for UI updates) - this will close the modal
     this.gateway.emitToUser(userId, "game:opponent-rejected", {
       gameId,
       game: gameResponse,
     });
+
+    // Update the games list for all users to show the game is available again
+    this.gateway.emitGameUpdated(gameResponse);
 
     return gameResponse;
   }
@@ -264,6 +351,13 @@ export class GamesService {
   ): Promise<{ message: string }> {
     if (!userId || !gameId) {
       throw new BadRequestException("User ID and Game ID are required.");
+    }
+
+    // Clear any pending timeout
+    const timeout = this.pendingRequests.get(gameId);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.pendingRequests.delete(gameId);
     }
 
     const game = await this.prisma.game.findUnique({
@@ -292,6 +386,7 @@ export class GamesService {
     if (game.pendingOpponentId) {
       this.gateway.emitToUser(game.pendingOpponentId, "game:cancelled", {
         gameId,
+        message: "Game was cancelled by the creator",
       });
     }
 
@@ -314,6 +409,13 @@ export class GamesService {
       throw new BadRequestException("User ID and Game ID are required.");
     }
 
+    // Clear any pending timeout
+    const timeout = this.pendingRequests.get(gameId);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.pendingRequests.delete(gameId);
+    }
+
     const game = await this.prisma.game.findUnique({
       where: { id: gameId },
     });
@@ -322,7 +424,37 @@ export class GamesService {
       throw new NotFoundException("Game not found.");
     }
 
-    // Check if user is part of this game
+    // Handle different scenarios for leaving
+    if (game.status === GameStatus.WAITING && game.pendingOpponentId === userId) {
+      // User who requested to join is leaving before getting an answer
+      const updatedGame = await this.prisma.game.update({
+        where: { id: gameId },
+        data: { pendingOpponentId: null },
+      });
+
+      const gameResponse: GameResponseDto = {
+        id: updatedGame.id,
+        creatorId: updatedGame.creatorId,
+        opponentId: updatedGame.opponentId ?? null,
+        pendingOpponentId: null,
+        status: updatedGame.status,
+        timeControl: updatedGame.timeControl,
+        fen: updatedGame.fen,
+        moveHistory: updatedGame.moveHistory,
+        isPrivate: updatedGame.isPrivate,
+        winnerId: updatedGame.winnerId ?? null,
+      };
+
+      // Close modal for the game creator
+      this.gateway.emitToUser(game.creatorId, "game:modal-close", { gameId });
+
+      // Update games list
+      this.gateway.emitGameUpdated(gameResponse);
+
+      return { message: "You have withdrawn your join request." };
+    }
+
+    // Check if user is part of this game (for IN_PROGRESS games)
     if (game.creatorId !== userId && game.opponentId !== userId) {
       throw new ForbiddenException("You are not part of this game.");
     }
@@ -353,5 +485,14 @@ export class GamesService {
     return {
       message: "You have forfeited the game. The opponent wins by forfeit.",
     };
+  }
+
+  // Method to clean up expired join requests (called on gateway disconnect)
+  cleanupPendingRequest(gameId: string): void {
+    const timeout = this.pendingRequests.get(gameId);
+    if (timeout) {
+      clearTimeout(timeout);
+      this.pendingRequests.delete(gameId);
+    }
   }
 }

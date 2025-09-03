@@ -71,6 +71,9 @@ let GamesGateway = class GamesGateway {
     emitGameFinished(gameId, winnerId, reason) {
         this.server.emit("game:finished", { gameId, winnerId, reason });
     }
+    emitModalClose(userId, gameId) {
+        this.emitToUser(userId, "game:modal-close", { gameId });
+    }
 };
 exports.GamesGateway = GamesGateway;
 __decorate([

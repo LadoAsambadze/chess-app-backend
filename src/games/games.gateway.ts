@@ -94,4 +94,9 @@ export class GamesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   emitGameFinished(gameId: string, winnerId: string | null, reason: string) {
     this.server.emit("game:finished", { gameId, winnerId, reason });
   }
+
+  // New method to emit modal close event
+  emitModalClose(userId: string, gameId: string) {
+    this.emitToUser(userId, "game:modal-close", { gameId });
+  }
 }
