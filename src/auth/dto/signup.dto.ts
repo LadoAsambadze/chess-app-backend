@@ -46,6 +46,22 @@ export class SignupDto {
   lastname: string;
 
   @ApiProperty({
+    example: "joni_doe",
+    description: "Unique username for the user (3–30 chars, lowercase)",
+    type: String,
+  })
+  @IsString({ message: "Username must be a string" })
+  @IsNotEmpty({ message: "Username is required" })
+  @Transform(({ value }) => value?.trim().toLowerCase())
+  @Matches(/^(?![_-])(?!.*[_-]$)[a-z0-9_-]+$/, {
+    message:
+      "Username can only contain lowercase letters, numbers, underscores, hyphens, and cannot start or end with them",
+  })
+  @MinLength(3, { message: "Username must be at least 3 characters long" })
+  @MaxLength(30, { message: "Username cannot exceed 30 characters" })
+  username: string;
+
+  @ApiProperty({
     example: "joni.doe@example.com",
     description: "User email address",
     type: String,

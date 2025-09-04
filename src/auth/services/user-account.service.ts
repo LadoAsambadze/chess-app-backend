@@ -22,7 +22,8 @@ export class UserAccountService {
   ) {}
 
   async createUserWithCredentials(dto: SignupDto) {
-    const { firstname, lastname, email, avatar, password, phone } = dto;
+    const { firstname, lastname, username, email, avatar, password, phone } =
+      dto;
 
     const emailVerificationToken = crypto.randomBytes(32).toString("hex");
     const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
@@ -49,6 +50,7 @@ export class UserAccountService {
       data: {
         firstname,
         lastname,
+        username,
         email,
         password: hashedPassword,
         avatar,
@@ -195,11 +197,14 @@ export class UserAccountService {
         },
       });
     } else {
+      const username = await this.generateUniqueUsername(email, firstname);
+
       user = await this.prisma.user.create({
         data: {
           firstname,
           lastname,
           email,
+          username,
           avatar,
           password: null,
           method: "GOOGLE",
@@ -221,6 +226,35 @@ export class UserAccountService {
     }
 
     return user;
+  }
+
+  private async generateUniqueUsername(
+    email: string,
+    firstname?: string
+  ): Promise<string> {
+    // Extract base username from email or use firstname
+    let baseUsername = firstname
+      ? firstname.toLowerCase().replace(/[^a-z0-9]/g, "")
+      : email
+          .split("@")[0]
+          .toLowerCase()
+          .replace(/[^a-z0-9]/g, "");
+
+    // Ensure minimum length
+    if (baseUsername.length < 3) {
+      baseUsername = "user" + baseUsername;
+    }
+
+    // Check if username exists
+    let username = baseUsername;
+    let counter = 0;
+
+    while (await this.prisma.user.findUnique({ where: { username } })) {
+      counter++;
+      username = `${baseUsername}${counter}`;
+    }
+
+    return username;
   }
 
   async validateCredentials(email: string, password: string) {

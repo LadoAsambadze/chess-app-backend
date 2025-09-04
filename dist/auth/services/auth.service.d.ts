@@ -16,6 +16,7 @@ export declare class AuthService {
         email: string;
         firstname: string;
         lastname: string;
+        username: string;
         avatar: string | null;
         phone: string | null;
         id: string;

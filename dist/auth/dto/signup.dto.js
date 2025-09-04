@@ -16,6 +16,7 @@ const swagger_1 = require("@nestjs/swagger");
 class SignupDto {
     firstname;
     lastname;
+    username;
     email;
     password;
     avatar;
@@ -54,6 +55,22 @@ __decorate([
     (0, class_validator_1.MaxLength)(50, { message: "Last name cannot exceed 50 characters" }),
     __metadata("design:type", String)
 ], SignupDto.prototype, "lastname", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        example: "joni_doe",
+        description: "Unique username for the user (3–30 chars, lowercase)",
+        type: String,
+    }),
+    (0, class_validator_1.IsString)({ message: "Username must be a string" }),
+    (0, class_validator_1.IsNotEmpty)({ message: "Username is required" }),
+    (0, class_transformer_1.Transform)(({ value }) => value?.trim().toLowerCase()),
+    (0, class_validator_1.Matches)(/^(?![_-])(?!.*[_-]$)[a-z0-9_-]+$/, {
+        message: "Username can only contain lowercase letters, numbers, underscores, hyphens, and cannot start or end with them",
+    }),
+    (0, class_validator_1.MinLength)(3, { message: "Username must be at least 3 characters long" }),
+    (0, class_validator_1.MaxLength)(30, { message: "Username cannot exceed 30 characters" }),
+    __metadata("design:type", String)
+], SignupDto.prototype, "username", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)({
         example: "joni.doe@example.com",

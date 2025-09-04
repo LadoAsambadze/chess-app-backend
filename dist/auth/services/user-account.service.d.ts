@@ -12,6 +12,7 @@ export declare class UserAccountService {
         email: string;
         firstname: string;
         lastname: string;
+        username: string;
         avatar: string | null;
         phone: string | null;
         id: string;
@@ -42,6 +43,7 @@ export declare class UserAccountService {
         password: string | null;
         firstname: string;
         lastname: string;
+        username: string;
         avatar: string | null;
         phone: string | null;
         id: string;
@@ -57,11 +59,13 @@ export declare class UserAccountService {
         updatedAt: Date;
         lastLogin: Date | null;
     }>;
+    private generateUniqueUsername;
     validateCredentials(email: string, password: string): Promise<{
         email: string;
         password: string | null;
         firstname: string;
         lastname: string;
+        username: string;
         avatar: string | null;
         phone: string | null;
         id: string;

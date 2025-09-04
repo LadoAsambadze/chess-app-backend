@@ -23,7 +23,7 @@ let UserAccountService = class UserAccountService {
         this.emailService = emailService;
     }
     async createUserWithCredentials(dto) {
-        const { firstname, lastname, email, avatar, password, phone } = dto;
+        const { firstname, lastname, username, email, avatar, password, phone } = dto;
         const emailVerificationToken = crypto.randomBytes(32).toString("hex");
         const emailVerificationExpires = new Date(Date.now() + 24 * 60 * 60 * 1000);
         const existingUser = await this.prisma.user.findUnique({
@@ -42,6 +42,7 @@ let UserAccountService = class UserAccountService {
             data: {
                 firstname,
                 lastname,
+                username,
                 email,
                 password: hashedPassword,
                 avatar,
@@ -162,11 +163,13 @@ let UserAccountService = class UserAccountService {
             });
         }
         else {
+            const username = await this.generateUniqueUsername(email, firstname);
             user = await this.prisma.user.create({
                 data: {
                     firstname,
                     lastname,
                     email,
+                    username,
                     avatar,
                     password: null,
                     method: "GOOGLE",
@@ -186,6 +189,24 @@ let UserAccountService = class UserAccountService {
             });
         }
         return user;
+    }
+    async generateUniqueUsername(email, firstname) {
+        let baseUsername = firstname
+            ? firstname.toLowerCase().replace(/[^a-z0-9]/g, "")
+            : email
+                .split("@")[0]
+                .toLowerCase()
+                .replace(/[^a-z0-9]/g, "");
+        if (baseUsername.length < 3) {
+            baseUsername = "user" + baseUsername;
+        }
+        let username = baseUsername;
+        let counter = 0;
+        while (await this.prisma.user.findUnique({ where: { username } })) {
+            counter++;
+            username = `${baseUsername}${counter}`;
+        }
+        return username;
     }
     async validateCredentials(email, password) {
         const user = await this.prisma.user.findUnique({ where: { email } });

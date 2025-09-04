@@ -8,69 +8,68 @@ datasource db {
 }
 
 model User {
-  id         String    @id @default(uuid())
-  firstname  String    @map("first_name")
-  lastname   String    @map("last_name")
-  email      String    @unique
-  password   String?
-  role       UserRole  @default(REGULAR)
-  method     AuthMethod @default(CREDENTIALS)
-  isVerified Boolean   @default(false) @map("is_verified")
-  emailVerificationToken String? @map("email_verification_token")
-  emailVerificationExpires DateTime? @map("email_verification_expires")
-  resetPasswordToken String? @map("reset_password_token")
+  id                        String     @id @default(uuid())
+  firstname                 String     @map("first_name")
+  lastname                  String     @map("last_name")
+  username                  String     @unique
+  email                     String     @unique
+  password                  String?
+  role                      UserRole   @default(REGULAR)
+  method                    AuthMethod @default(CREDENTIALS)
+  isVerified                Boolean    @default(false) @map("is_verified")
+  emailVerificationToken    String?    @map("email_verification_token")
+  emailVerificationExpires  DateTime?  @map("email_verification_expires")
+  resetPasswordToken        String?    @map("reset_password_token")
   resetPasswordTokenExpires DateTime?  @map("reset_password_token_expires")
-  isActive   Boolean   @default(true) @map("is_active")
-  avatar     String?
-  phone      String?
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
-  lastLogin  DateTime? @map("last_login")
-  accounts   Account[]
-  sessions   Session[]
-  
- 
-  createdGames Game[] @relation("CreatedGames")
-  joinedGames  Game[] @relation("JoinedGames")
-  wonGames     Game[] @relation("WonGames")
+  isActive                  Boolean    @default(true) @map("is_active")
+  avatar                    String?
+  phone                     String?
+  createdAt                 DateTime   @default(now()) @map("created_at")
+  updatedAt                 DateTime   @updatedAt @map("updated_at")
+  lastLogin                 DateTime?  @map("last_login")
+  createdGames              Game[]     @relation("CreatedGames")
+  joinedGames               Game[]     @relation("JoinedGames")
+  wonGames                  Game[]     @relation("WonGames")
+  accounts                  Account[]
+  sessions                  Session[]
 
   @@map("users")
 }
 
 model Account {
-  id                 String   @id @default(uuid())
-  type               String
-  provider           String
-  providerAccountId  String?  @map("provider_account_id")
-  refreshToken       String?  @map("refresh_token")
-  accessToken        String?  @map("access_token")
-  expiresAt          Int?     @map("expires_at")
-  tokenType          String?  @map("token_type")
-  scope              String?
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
-  userId             String   @map("user_id")
-  user               User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                String   @id @default(uuid())
+  type              String
+  provider          String
+  providerAccountId String?  @map("provider_account_id")
+  refreshToken      String?  @map("refresh_token")
+  accessToken       String?  @map("access_token")
+  expiresAt         Int?     @map("expires_at")
+  tokenType         String?  @map("token_type")
+  scope             String?
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+  userId            String   @map("user_id")
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
 }
 
 model Session {
-  id         String   @id @default(uuid())
-  token      String   @unique
-  userId     String   @map("user_id")
-  expiresAt  DateTime @map("expires_at")
-  isRevoked  Boolean  @default(false) @map("is_revoked")
-  deviceId   String?  @map("device_id")
-  userAgent  String?  @map("user_agent")
-  ipAddress  String?  @map("ip_address")
-  createdAt  DateTime @default(now()) @map("created_at")
-  updatedAt  DateTime @updatedAt @map("updated_at")
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String   @map("user_id")
+  expiresAt DateTime @map("expires_at")
+  isRevoked Boolean  @default(false) @map("is_revoked")
+  deviceId  String?  @map("device_id")
+  userAgent String?  @map("user_agent")
+  ipAddress String?  @map("ip_address")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@map("sessions")
   @@index([userId])
+  @@map("sessions")
 }
 
 model LoginAttempt {
@@ -85,22 +84,22 @@ model LoginAttempt {
 }
 
 model Game {
-  id               String      @id @default(cuid())
-  creatorId        String
-  creator          User        @relation("CreatedGames", fields: [creatorId], references: [id])
-  opponentId       String?     
-  opponent         User?       @relation("JoinedGames", fields: [opponentId], references: [id])
-  pendingOpponentId String?     
-  winnerId         String?
-  winner           User?       @relation("WonGames", fields: [winnerId], references: [id])
-  status           GameStatus
-  timeControl      Int
-  fen              String      @default("start")
-  moveHistory      Json        @default("[]")
-  isPrivate        Boolean     @default(false)
-  password         String?
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  id                String     @id @default(cuid())
+  creatorId         String
+  opponentId        String?
+  pendingOpponentId String?
+  winnerId          String?
+  status            GameStatus
+  timeControl       Int
+  fen               String     @default("start")
+  moveHistory       Json       @default("[]")
+  isPrivate         Boolean    @default(false)
+  password          String?
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  creator           User       @relation("CreatedGames", fields: [creatorId], references: [id])
+  opponent          User?      @relation("JoinedGames", fields: [opponentId], references: [id])
+  winner            User?      @relation("WonGames", fields: [winnerId], references: [id])
 }
 
 enum UserRole {
@@ -127,8 +126,3 @@ enum GameStatus {
   DRAW
   CANCELLED
 }
-
-
-
-
- 
