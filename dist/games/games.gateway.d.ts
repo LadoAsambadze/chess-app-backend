@@ -4,6 +4,7 @@ import { GameResponseDto } from "./dto/game-response.dto";
 export declare class GamesGateway implements OnGatewayConnection, OnGatewayDisconnect {
     server: Server;
     private userSockets;
+    private games;
     handleConnection(client: Socket): void;
     handleDisconnect(client: Socket): void;
     handleJoinUserRoom(client: Socket, userId: string): void;
@@ -19,4 +20,13 @@ export declare class GamesGateway implements OnGatewayConnection, OnGatewayDisco
     emitGameRemoved(gameId: string): void;
     emitGameFinished(gameId: string, winnerId: string | null, reason: string): void;
     emitModalClose(userId: string, gameId: string): void;
+    handleJoinGameRoom(client: Socket, data: {
+        gameId: string;
+    }): void;
+    handleChessMove(client: Socket, data: {
+        gameId: string;
+        from: string;
+        to: string;
+        promotion?: string;
+    }): void;
 }
