@@ -8,18 +8,19 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
-var __param = (this && this.__param) || function (paramIndex, decorator) {
-    return function (target, key) { decorator(target, key, paramIndex); }
-};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.GamesGateway = void 0;
 const websockets_1 = require("@nestjs/websockets");
 const socket_io_1 = require("socket.io");
-const chess_js_1 = require("chess.js");
 let GamesGateway = class GamesGateway {
     server;
     userSockets = new Map();
-    games = {};
+    emitGameCreated(payload) {
+        this.server.emit("game:created", payload);
+    }
+    emitGameUpdated(game) {
+        this.server.emit("game:updated", game);
+    }
     handleConnection(client) {
         const userId = client.handshake.auth?.userId || client.handshake.query?.userId;
         if (userId) {
@@ -57,12 +58,6 @@ let GamesGateway = class GamesGateway {
             });
         }
     }
-    emitGameCreated(game) {
-        this.server.emit("game:created", game);
-    }
-    emitGameUpdated(game) {
-        this.server.emit("game:updated", game);
-    }
     emitToUser(userId, event, data) {
         const socketId = this.userSockets.get(userId);
         if (socketId) {
@@ -78,35 +73,6 @@ let GamesGateway = class GamesGateway {
     }
     emitModalClose(userId, gameId) {
         this.emitToUser(userId, "game:modal-close", { gameId });
-    }
-    handleJoinGameRoom(client, data) {
-        const { gameId } = data;
-        client.join(gameId);
-        if (!this.games[gameId]) {
-            this.games[gameId] = new chess_js_1.Chess();
-        }
-        client.emit("game:joined", {
-            gameId,
-            board: this.games[gameId].board(),
-            fen: this.games[gameId].fen(),
-        });
-    }
-    handleChessMove(client, data) {
-        const game = this.games[data.gameId];
-        if (!game)
-            return;
-        const move = game.move({
-            from: data.from,
-            to: data.to,
-            promotion: data.promotion || "q",
-        });
-        if (move) {
-            this.server.to(data.gameId).emit("chess:move-made", {
-                move,
-                board: game.board(),
-                fen: game.fen(),
-            });
-        }
     }
 };
 exports.GamesGateway = GamesGateway;
@@ -132,22 +98,6 @@ __decorate([
     __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
     __metadata("design:returntype", void 0)
 ], GamesGateway.prototype, "handleRespondToJoinRequest", null);
-__decorate([
-    (0, websockets_1.SubscribeMessage)("join-game-room"),
-    __param(0, (0, websockets_1.ConnectedSocket)()),
-    __param(1, (0, websockets_1.MessageBody)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
-    __metadata("design:returntype", void 0)
-], GamesGateway.prototype, "handleJoinGameRoom", null);
-__decorate([
-    (0, websockets_1.SubscribeMessage)("chess:move"),
-    __param(0, (0, websockets_1.ConnectedSocket)()),
-    __param(1, (0, websockets_1.MessageBody)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
-    __metadata("design:returntype", void 0)
-], GamesGateway.prototype, "handleChessMove", null);
 exports.GamesGateway = GamesGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({
         namespace: "/games",

@@ -9,7 +9,6 @@ import {
 } from "@nestjs/websockets";
 import { Server, Socket } from "socket.io";
 import { GameResponseDto } from "./dto/game-response.dto";
-import { Chess } from "chess.js";
 
 @WebSocketGateway({
   namespace: "/games",
@@ -19,8 +18,15 @@ export class GamesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   @WebSocketServer()
   server: Server;
 
-  private userSockets = new Map<string, string>(); // userId -> socketId
-  private games: Record<string, Chess> = {}; // gameId -> Chess instance
+  private userSockets = new Map<string, string>();
+
+  emitGameCreated(payload: GameResponseDto): void {
+    this.server.emit("game:created", payload);
+  }
+
+  emitGameUpdated(game: GameResponseDto): void {
+    this.server.emit("game:updated", game);
+  }
 
   handleConnection(client: Socket) {
     const userId =
@@ -74,14 +80,6 @@ export class GamesGateway implements OnGatewayConnection, OnGatewayDisconnect {
     }
   }
 
-  emitGameCreated(game: GameResponseDto): void {
-    this.server.emit("game:created", game);
-  }
-
-  emitGameUpdated(game: GameResponseDto): void {
-    this.server.emit("game:updated", game);
-  }
-
   emitToUser(userId: string, event: string, data: any): void {
     const socketId = this.userSockets.get(userId);
 
@@ -101,54 +99,5 @@ export class GamesGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   emitModalClose(userId: string, gameId: string) {
     this.emitToUser(userId, "game:modal-close", { gameId });
-  }
-
-  // ===========================
-  // Chess Game Events
-  // ===========================
-
-  @SubscribeMessage("join-game-room")
-  handleJoinGameRoom(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: { gameId: string }
-  ) {
-    const { gameId } = data;
-    client.join(gameId);
-
-    // Create a new chess game if it doesn't exist
-    if (!this.games[gameId]) {
-      this.games[gameId] = new Chess();
-    }
-
-    client.emit("game:joined", {
-      gameId,
-      board: this.games[gameId].board(),
-      fen: this.games[gameId].fen(),
-    });
-  }
-
-  @SubscribeMessage("chess:move")
-  handleChessMove(
-    @ConnectedSocket() client: Socket,
-    @MessageBody()
-    data: { gameId: string; from: string; to: string; promotion?: string }
-  ) {
-    const game = this.games[data.gameId];
-    if (!game) return;
-
-    const move = game.move({
-      from: data.from,
-      to: data.to,
-      promotion: data.promotion || "q",
-    });
-
-    if (move) {
-      // Broadcast the move to all players in the game room
-      this.server.to(data.gameId).emit("chess:move-made", {
-        move,
-        board: game.board(),
-        fen: game.fen(),
-      });
-    }
   }
 }

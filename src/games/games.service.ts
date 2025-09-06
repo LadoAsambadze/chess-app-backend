@@ -12,12 +12,14 @@ import { GamesGateway } from "./games.gateway";
 
 @Injectable()
 export class GamesService {
-  private pendingRequests = new Map<string, NodeJS.Timeout>(); // gameId -> timeout
+  private pendingRequests = new Map<string, NodeJS.Timeout>();
 
   constructor(
     private prisma: PrismaService,
     private gateway: GamesGateway
   ) {}
+
+  // 1. create game
 
   async createGame(
     userId: string,
@@ -31,7 +33,6 @@ export class GamesService {
       throw new BadRequestException("Private games must have a password.");
     }
 
-    // Check if user already has an active game (as creator or participant)
     const existingGame = await this.prisma.game.findFirst({
       where: {
         OR: [{ creatorId: userId }, { opponentId: userId }],
@@ -121,14 +122,18 @@ export class GamesService {
     const timeout = setTimeout(async () => {
       try {
         const currentGame = await this.prisma.game.findUnique({
-          where: { id: gameId }
+          where: { id: gameId },
         });
-        
-        if (currentGame && currentGame.pendingOpponentId === userId && currentGame.status === GameStatus.WAITING) {
+
+        if (
+          currentGame &&
+          currentGame.pendingOpponentId === userId &&
+          currentGame.status === GameStatus.WAITING
+        ) {
           await this.autoRejectJoinRequest(gameId, userId);
         }
       } catch (error) {
-        console.error('Error in auto-reject timeout:', error);
+        console.error("Error in auto-reject timeout:", error);
       }
       this.pendingRequests.delete(gameId);
     }, 30000); // 30 seconds timeout
@@ -154,16 +159,18 @@ export class GamesService {
       winnerId: updatedGame.winnerId ?? null,
     };
 
-    // Update the games list for all users to show pending status
     this.gateway.emitGameUpdated(gameResponse);
 
     return gameResponse;
   }
 
-  private async autoRejectJoinRequest(gameId: string, requesterId: string): Promise<void> {
+  private async autoRejectJoinRequest(
+    gameId: string,
+    requesterId: string
+  ): Promise<void> {
     try {
       const game = await this.prisma.game.findUnique({ where: { id: gameId } });
-      
+
       if (!game || game.pendingOpponentId !== requesterId) {
         return; // Request already handled
       }
@@ -200,7 +207,7 @@ export class GamesService {
       // Update the games list for all users
       this.gateway.emitGameUpdated(gameResponse);
     } catch (error) {
-      console.error('Error in auto-reject:', error);
+      console.error("Error in auto-reject:", error);
     }
   }
 
@@ -425,7 +432,10 @@ export class GamesService {
     }
 
     // Handle different scenarios for leaving
-    if (game.status === GameStatus.WAITING && game.pendingOpponentId === userId) {
+    if (
+      game.status === GameStatus.WAITING &&
+      game.pendingOpponentId === userId
+    ) {
       // User who requested to join is leaving before getting an answer
       const updatedGame = await this.prisma.game.update({
         where: { id: gameId },

@@ -106,14 +106,16 @@ let GamesService = class GamesService {
         const timeout = setTimeout(async () => {
             try {
                 const currentGame = await this.prisma.game.findUnique({
-                    where: { id: gameId }
+                    where: { id: gameId },
                 });
-                if (currentGame && currentGame.pendingOpponentId === userId && currentGame.status === client_1.GameStatus.WAITING) {
+                if (currentGame &&
+                    currentGame.pendingOpponentId === userId &&
+                    currentGame.status === client_1.GameStatus.WAITING) {
                     await this.autoRejectJoinRequest(gameId, userId);
                 }
             }
             catch (error) {
-                console.error('Error in auto-reject timeout:', error);
+                console.error("Error in auto-reject timeout:", error);
             }
             this.pendingRequests.delete(gameId);
         }, 30000);
@@ -168,7 +170,7 @@ let GamesService = class GamesService {
             this.gateway.emitGameUpdated(gameResponse);
         }
         catch (error) {
-            console.error('Error in auto-reject:', error);
+            console.error("Error in auto-reject:", error);
         }
     }
     async acceptOpponent(userId, gameId) {
@@ -319,7 +321,8 @@ let GamesService = class GamesService {
         if (!game) {
             throw new common_1.NotFoundException("Game not found.");
         }
-        if (game.status === client_1.GameStatus.WAITING && game.pendingOpponentId === userId) {
+        if (game.status === client_1.GameStatus.WAITING &&
+            game.pendingOpponentId === userId) {
             const updatedGame = await this.prisma.game.update({
                 where: { id: gameId },
                 data: { pendingOpponentId: null },
