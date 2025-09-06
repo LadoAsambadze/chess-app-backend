@@ -44,6 +44,16 @@ export class UserAccountService {
       }
     }
 
+    const existingUsername = await this.prisma.user.findUnique({
+      where: { username },
+    });
+
+    if (existingUsername) {
+      throw new ConflictException(
+        "This username is already taken. Please choose a different username."
+      );
+    }
+
     const hashedPassword = await hash(password);
 
     const user = await this.prisma.user.create({

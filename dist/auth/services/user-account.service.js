@@ -37,6 +37,12 @@ let UserAccountService = class UserAccountService {
                 throw new common_1.ConflictException("An account with this email already exists. Please sign in with your password.");
             }
         }
+        const existingUsername = await this.prisma.user.findUnique({
+            where: { username },
+        });
+        if (existingUsername) {
+            throw new common_1.ConflictException("This username is already taken. Please choose a different username.");
+        }
         const hashedPassword = await (0, argon2_1.hash)(password);
         const user = await this.prisma.user.create({
             data: {
