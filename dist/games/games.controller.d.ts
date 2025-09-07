@@ -16,4 +16,23 @@ export declare class GamesController {
     leaveGame(user: User, gameId: string): Promise<{
         message: string;
     }>;
+    resignGame(user: User, gameId: string): Promise<{
+        message: string;
+    }>;
+    offerDraw(user: User, gameId: string): Promise<{
+        success: boolean;
+        message: string;
+        gameId: string;
+    }>;
+    respondToDraw(user: User, gameId: string, body: {
+        accept: boolean;
+    }): Promise<{
+        success: boolean;
+        message: string;
+        gameId?: undefined;
+    } | {
+        success: boolean;
+        message: string;
+        gameId: string;
+    }>;
 }

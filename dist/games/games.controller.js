@@ -45,6 +45,15 @@ let GamesController = class GamesController {
     async leaveGame(user, gameId) {
         return this.gamesService.leaveGame(user.id, gameId);
     }
+    async resignGame(user, gameId) {
+        return this.gamesService.resignGame(user.id, gameId);
+    }
+    async offerDraw(user, gameId) {
+        return this.gamesService.offerDraw(user.id, gameId);
+    }
+    async respondToDraw(user, gameId, body) {
+        return this.gamesService.respondToDraw(user.id, gameId, body.accept);
+    }
 };
 exports.GamesController = GamesController;
 __decorate([
@@ -117,6 +126,37 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", Promise)
 ], GamesController.prototype, "leaveGame", null);
+__decorate([
+    (0, common_1.Post)("resign/:gameId"),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)("jwt")),
+    (0, swagger_1.ApiBearerAuth)("access_token"),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)("gameId")),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], GamesController.prototype, "resignGame", null);
+__decorate([
+    (0, common_1.Post)("offer-draw/:gameId"),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)("jwt")),
+    (0, swagger_1.ApiBearerAuth)("access_token"),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)("gameId")),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", Promise)
+], GamesController.prototype, "offerDraw", null);
+__decorate([
+    (0, common_1.Post)("respond-draw/:gameId"),
+    (0, common_1.UseGuards)((0, passport_1.AuthGuard)("jwt")),
+    (0, swagger_1.ApiBearerAuth)("access_token"),
+    __param(0, (0, current_user_decorator_1.CurrentUser)()),
+    __param(1, (0, common_1.Param)("gameId")),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object]),
+    __metadata("design:returntype", Promise)
+], GamesController.prototype, "respondToDraw", null);
 exports.GamesController = GamesController = __decorate([
     (0, common_1.Controller)("games"),
     __metadata("design:paramtypes", [games_service_1.GamesService])

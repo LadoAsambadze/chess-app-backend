@@ -19,4 +19,13 @@ export declare class GamesGateway implements OnGatewayConnection, OnGatewayDisco
     emitGameRemoved(gameId: string): void;
     emitGameFinished(gameId: string, winnerId: string | null, reason: string): void;
     emitModalClose(userId: string, gameId: string): void;
+    emitDrawOffer(gameId: string, offererId: string, recipientId: string): void;
+    emitDrawResponse(gameId: string, offererId: string, accepted: boolean): void;
+    emitToGamePlayers(playerIds: string[], event: string, data: any): void;
+    handleJoinGame(client: Socket, data: {
+        gameId: string;
+    }): void;
+    handleLeaveGame(client: Socket, data: {
+        gameId: string;
+    }): void;
 }
