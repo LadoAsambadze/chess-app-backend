@@ -100,4 +100,45 @@ export class GamesGateway implements OnGatewayConnection, OnGatewayDisconnect {
   emitModalClose(userId: string, gameId: string) {
     this.emitToUser(userId, "game:modal-close", { gameId });
   }
+
+  // Draw functionality methods
+  emitDrawOffer(gameId: string, offererId: string, recipientId: string) {
+    this.emitToUser(recipientId, "game:draw-offer", {
+      gameId,
+      offererId,
+      message: "Your opponent has offered a draw",
+    });
+  }
+
+  emitDrawResponse(gameId: string, offererId: string, accepted: boolean) {
+    const message = accepted
+      ? "Your draw offer was accepted"
+      : "Your draw offer was declined";
+
+    this.emitToUser(offererId, "game:draw-response", {
+      gameId,
+      accepted,
+      message,
+    });
+  }
+
+  // Utility method to notify both players about game events
+  emitToGamePlayers(playerIds: string[], event: string, data: any): void {
+    playerIds.forEach((playerId) => {
+      this.emitToUser(playerId, event, data);
+    });
+  }
+
+  // Additional WebSocket message handlers for draw functionality
+  @SubscribeMessage("join-game")
+  handleJoinGame(client: Socket, data: { gameId: string }) {
+    client.join(data.gameId);
+    client.emit("game-joined", { gameId: data.gameId, socketId: client.id });
+  }
+
+  @SubscribeMessage("leave-game")
+  handleLeaveGame(client: Socket, data: { gameId: string }) {
+    client.leave(data.gameId);
+    client.emit("game-left", { gameId: data.gameId, socketId: client.id });
+  }
 }

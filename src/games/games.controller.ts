@@ -77,4 +77,29 @@ export class GamesController {
   async leaveGame(@CurrentUser() user: User, @Param("gameId") gameId: string) {
     return this.gamesService.leaveGame(user.id, gameId);
   }
+
+  @Post("resign/:gameId")
+  @UseGuards(AuthGuard("jwt"))
+  @ApiBearerAuth("access_token")
+  async resignGame(@CurrentUser() user: User, @Param("gameId") gameId: string) {
+    return this.gamesService.resignGame(user.id, gameId);
+  }
+
+  @Post("offer-draw/:gameId")
+  @UseGuards(AuthGuard("jwt"))
+  @ApiBearerAuth("access_token")
+  async offerDraw(@CurrentUser() user: User, @Param("gameId") gameId: string) {
+    return this.gamesService.offerDraw(user.id, gameId);
+  }
+
+  @Post("respond-draw/:gameId")
+  @UseGuards(AuthGuard("jwt"))
+  @ApiBearerAuth("access_token")
+  async respondToDraw(
+    @CurrentUser() user: User,
+    @Param("gameId") gameId: string,
+    @Body() body: { accept: boolean }
+  ) {
+    return this.gamesService.respondToDraw(user.id, gameId, body.accept);
+  }
 }

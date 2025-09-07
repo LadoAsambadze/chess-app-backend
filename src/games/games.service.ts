@@ -19,8 +19,6 @@ export class GamesService {
     private gateway: GamesGateway
   ) {}
 
-  // 1. create game
-
   async createGame(
     userId: string,
     dto: CreateGameDto
@@ -101,6 +99,29 @@ export class GamesService {
       isPrivate: game.isPrivate,
       winnerId: game.winnerId ?? null,
     }));
+  }
+
+  async getGameById(gameId: string): Promise<GameResponseDto> {
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+    });
+
+    if (!game) {
+      throw new NotFoundException("Game not found");
+    }
+
+    return {
+      id: game.id,
+      creatorId: game.creatorId,
+      opponentId: game.opponentId ?? null,
+      pendingOpponentId: game.pendingOpponentId ?? null,
+      status: game.status,
+      timeControl: game.timeControl,
+      fen: game.fen,
+      moveHistory: game.moveHistory,
+      isPrivate: game.isPrivate,
+      winnerId: game.winnerId ?? null,
+    };
   }
 
   async joinGame(userId: string, gameId: string): Promise<GameResponseDto> {
@@ -490,14 +511,178 @@ export class GamesService {
     });
 
     // Notify both players about the game result
-    this.gateway.emitGameFinished(gameId, winnerId, "forfeit");
+    this.gateway.emitGameFinished(gameId, winnerId!, "forfeit");
 
     return {
       message: "You have forfeited the game. The opponent wins by forfeit.",
     };
   }
 
-  // Method to clean up expired join requests (called on gateway disconnect)
+  async resignGame(
+    userId: string,
+    gameId: string
+  ): Promise<{ message: string }> {
+    if (!userId || !gameId) {
+      throw new BadRequestException("User ID and Game ID are required.");
+    }
+
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+    });
+
+    if (!game) {
+      throw new NotFoundException("Game not found.");
+    }
+
+    // Check if user is part of this game
+    if (game.creatorId !== userId && game.opponentId !== userId) {
+      throw new ForbiddenException("You are not part of this game.");
+    }
+
+    // Can only resign games that are currently in progress
+    if (game.status !== GameStatus.IN_PROGRESS) {
+      throw new BadRequestException(
+        "You can only resign from games that are currently in progress."
+      );
+    }
+
+    // Determine the winner (the other player)
+    const winnerId =
+      game.creatorId === userId ? game.opponentId : game.creatorId;
+
+    // Update game status to finished with the resigning player losing
+    await this.prisma.game.update({
+      where: { id: gameId },
+      data: {
+        status: GameStatus.FINISHED,
+        winnerId: winnerId,
+      },
+    });
+
+    // Notify both players about the game result via socket
+    this.gateway.emitGameFinished(gameId, winnerId!, "resignation");
+
+    return {
+      message:
+        "You have resigned from the game. The opponent wins by resignation.",
+    };
+  }
+
+  async offerDraw(userId: string, gameId: string) {
+    if (!userId || !gameId) {
+      throw new BadRequestException("User ID and Game ID are required.");
+    }
+
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+    });
+
+    if (!game) {
+      throw new NotFoundException("Game not found.");
+    }
+
+    // Check if user is part of this game
+    if (game.creatorId !== userId && game.opponentId !== userId) {
+      throw new ForbiddenException("You are not part of this game.");
+    }
+
+    // Can only offer draw in games that are currently in progress
+    if (game.status !== GameStatus.IN_PROGRESS) {
+      throw new BadRequestException(
+        "You can only offer draw in games that are currently in progress."
+      );
+    }
+
+    // Get opponent ID
+    const opponentId =
+      game.creatorId === userId ? game.opponentId : game.creatorId;
+
+    if (!opponentId) {
+      throw new BadRequestException("No opponent found in this game.");
+    }
+
+    // Emit draw offer to opponent via WebSocket
+    this.gateway.emitDrawOffer(gameId, userId, opponentId);
+
+    return {
+      success: true,
+      message: "Draw offer sent successfully",
+      gameId,
+    };
+  }
+
+  async respondToDraw(userId: string, gameId: string, accept: boolean) {
+    if (!userId || !gameId) {
+      throw new BadRequestException("User ID and Game ID are required.");
+    }
+
+    const game = await this.prisma.game.findUnique({
+      where: { id: gameId },
+    });
+
+    if (!game) {
+      throw new NotFoundException("Game not found.");
+    }
+
+    // Check if user is part of this game
+    if (game.creatorId !== userId && game.opponentId !== userId) {
+      throw new ForbiddenException("You are not part of this game.");
+    }
+
+    // Can only respond to draw offers in games that are currently in progress
+    if (game.status !== GameStatus.IN_PROGRESS) {
+      throw new BadRequestException(
+        "You can only respond to draw offers in games that are currently in progress."
+      );
+    }
+
+    // Get opponent ID (the one who offered the draw)
+    const opponentId =
+      game.creatorId === userId ? game.opponentId : game.creatorId;
+
+    if (!opponentId) {
+      throw new BadRequestException("No opponent found in this game.");
+    }
+
+    if (accept) {
+      // Update game status to finished with draw result
+      await this.prisma.game.update({
+        where: { id: gameId },
+        data: {
+          status: GameStatus.FINISHED,
+          winnerId: null, // No winner in a draw
+          // Add these fields if they exist in your Prisma schema:
+          // endReason: "draw",
+          // endedAt: new Date(),
+        },
+      });
+
+      // Emit game finished event to both players
+      this.gateway.emitGameFinished(gameId, null, "draw");
+
+      return {
+        success: true,
+        message: "Draw accepted. Game ended in a draw.",
+      };
+    } else {
+      // Emit draw response to the offerer
+      this.gateway.emitDrawResponse(gameId, opponentId, false);
+
+      return {
+        success: true,
+        message: "Draw offer declined",
+        gameId,
+      };
+    }
+  }
+
+  // Helper method to find game by ID (if you don't have it already)
+  async findById(gameId: string) {
+    return this.prisma.game.findUnique({
+      where: { id: gameId },
+    });
+  }
+
   cleanupPendingRequest(gameId: string): void {
     const timeout = this.pendingRequests.get(gameId);
     if (timeout) {

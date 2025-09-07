@@ -74,6 +74,36 @@ let GamesGateway = class GamesGateway {
     emitModalClose(userId, gameId) {
         this.emitToUser(userId, "game:modal-close", { gameId });
     }
+    emitDrawOffer(gameId, offererId, recipientId) {
+        this.emitToUser(recipientId, "game:draw-offer", {
+            gameId,
+            offererId,
+            message: "Your opponent has offered a draw",
+        });
+    }
+    emitDrawResponse(gameId, offererId, accepted) {
+        const message = accepted
+            ? "Your draw offer was accepted"
+            : "Your draw offer was declined";
+        this.emitToUser(offererId, "game:draw-response", {
+            gameId,
+            accepted,
+            message,
+        });
+    }
+    emitToGamePlayers(playerIds, event, data) {
+        playerIds.forEach((playerId) => {
+            this.emitToUser(playerId, event, data);
+        });
+    }
+    handleJoinGame(client, data) {
+        client.join(data.gameId);
+        client.emit("game-joined", { gameId: data.gameId, socketId: client.id });
+    }
+    handleLeaveGame(client, data) {
+        client.leave(data.gameId);
+        client.emit("game-left", { gameId: data.gameId, socketId: client.id });
+    }
 };
 exports.GamesGateway = GamesGateway;
 __decorate([
@@ -98,6 +128,18 @@ __decorate([
     __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
     __metadata("design:returntype", void 0)
 ], GamesGateway.prototype, "handleRespondToJoinRequest", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)("join-game"),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
+    __metadata("design:returntype", void 0)
+], GamesGateway.prototype, "handleJoinGame", null);
+__decorate([
+    (0, websockets_1.SubscribeMessage)("leave-game"),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [socket_io_1.Socket, Object]),
+    __metadata("design:returntype", void 0)
+], GamesGateway.prototype, "handleLeaveGame", null);
 exports.GamesGateway = GamesGateway = __decorate([
     (0, websockets_1.WebSocketGateway)({
         namespace: "/games",
